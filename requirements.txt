@@ -1,0 +1,15 @@
+# 照片记录册管理系统依赖清单
+# 安装：pip install -r requirements.txt
+# 说明：使用最低版本约束以兼容新旧 Python（含 3.12+），由 pip 解析本机最新兼容版本
+
+fastapi>=0.110             # Web 框架（含 pydantic v2）
+uvicorn>=0.29              # ASGI 服务器（纯 Python 版，无需编译工具）
+Jinja2>=3.1                # 页面模板引擎
+SQLAlchemy>=2.0            # ORM
+PyMySQL>=1.1               # MySQL 驱动（纯 Python）
+cryptography>=42.0         # PyMySQL 认证插件依赖（caching_sha2_password）
+python-jose[cryptography]>=3.3  # JWT 签发与校验
+passlib[bcrypt]>=1.7.4     # 密码哈希框架
+bcrypt>=4.0.1,<5           # bcrypt 算法实现（passlib 1.7.4 不兼容 5.x，勿升）
+python-multipart>=0.0.9    # 表单 / 文件上传解析
+python-dotenv>=1.0         # .env 配置文件加载

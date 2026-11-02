@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}登录 · 拾光记{% endblock %}
+
+{% block content %}
+<!-- 登录页：柔和渐变背景 + 居中卡片，PC/移动端自适应 -->
+<div class="relative flex-1 flex items-center justify-center px-4 py-10
+            bg-gradient-to-br from-brand-100 via-cream to-brand-200 overflow-hidden">
+    <!-- 装饰光斑 -->
+    <div class="pointer-events-none absolute -top-20 -left-20 w-72 h-72 rounded-full bg-brand-300/40 blur-3xl"></div>
+    <div class="pointer-events-none absolute -bottom-24 -right-16 w-80 h-80 rounded-full bg-brand-200/60 blur-3xl"></div>
+
+    <div class="relative w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="mx-auto w-16 h-16 rounded-3xl bg-white shadow-card grid place-items-center text-3xl mb-4">&#128247;</div>
+            <h1 class="font-serif text-3xl font-bold text-brand-800">拾光记</h1>
+            <p class="mt-2 text-sm text-stone-500">照片记录册管理系统 · 收藏每一段值得纪念的时光</p>
+        </div>
+
+        <div class="bg-white/90 backdrop-blur rounded-3xl shadow-soft border border-white px-6 py-8 sm:px-8">
+            <h2 class="text-lg font-semibold text-stone-700 mb-6">账号登录</h2>
+
+            <!-- 错误提示 -->
+            <div id="login-error" class="hidden mb-4 px-3 py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm"></div>
+
+            <form id="login-form" novalidate>
+                <label class="block text-sm font-medium text-stone-600 mb-1.5" for="username">账号</label>
+                <input id="username" name="username" type="text" autocomplete="username" maxlength="64"
+                       placeholder="请输入账号"
+                       class="w-full px-4 py-2.5 rounded-xl border border-stone-300 bg-white/80
+                              focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition">
+
+                <label class="block text-sm font-medium text-stone-600 mt-4 mb-1.5" for="password">密码</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" maxlength="64"
+                       placeholder="请输入密码（至少 6 位）"
+                       class="w-full px-4 py-2.5 rounded-xl border border-stone-300 bg-white/80
+                              focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition">
+
+                <button type="submit" id="btn-login"
+                        class="mt-6 w-full py-2.5 rounded-xl bg-brand-500 text-white font-medium
+                               hover:bg-brand-600 active:scale-[.99] disabled:opacity-60 disabled:cursor-not-allowed transition shadow-card">
+                    登 录
+                </button>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/login.js"></script>
+{% endblock %}

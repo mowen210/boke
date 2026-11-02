@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{% block title %}拾光记 · 照片记录册{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128247;</text></svg>">
+    <!-- TailwindCSS（CDN 引入，无需前端工程） -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        /* Tailwind 主题扩展：柔和相册纪念册配色 */
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fdf2f5', 100: '#fce7ef', 200: '#fbd5e2', 300: '#f8b4cd',
+                            400: '#f39ab8', 500: '#ec7ba2', 600: '#dd5c87', 700: '#c1426d',
+                            800: '#a13358', 900: '#862d4b'
+                        },
+                        cream: '#FBF7F2'
+                    },
+                    boxShadow: {
+                        soft: '0 8px 24px -10px rgba(134, 45, 75, 0.18)',
+                        card: '0 4px 16px -8px rgba(134, 45, 75, 0.14)'
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="min-h-screen flex flex-col bg-cream text-stone-800 antialiased">
+    {# 顶部导航：登录页不渲染 #}
+    {% if user is defined and user %}
+    <nav class="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-stone-200/70">
+        <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+            <a href="/" class="flex items-center gap-2 font-serif font-bold text-lg text-brand-700 select-none">
+                <span class="w-8 h-8 rounded-xl bg-brand-500 text-white grid place-items-center text-base shadow-card">&#128247;</span>
+                <span>拾光记</span>
+            </a>
+            <div class="flex items-center gap-2 sm:gap-3">
+                {% if user.is_admin %}
+                <span class="hidden sm:inline text-xs px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 border border-brand-200">管理员</span>
+                {% endif %}
+                <span class="text-sm text-stone-600 truncate max-w-[9rem] sm:max-w-none">{{ user.nickname }}</span>
+                <button id="btn-logout"
+                        class="text-sm px-3 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:border-brand-300 hover:text-brand-600 transition">
+                    退出
+                </button>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="py-6 text-center text-xs text-stone-400">
+        拾光记 · 照片记录册管理系统 — 用心收藏每一段时光
+    </footer>
+
+    {# 全局轻提示容器 #}
+    <div id="toast-box" class="fixed top-16 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+    <script src="/static/js/common.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

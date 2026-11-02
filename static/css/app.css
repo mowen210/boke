@@ -1,0 +1,225 @@
+/* ============================================================
+   拾光记 · 全局样式
+   TailwindCSS 之上的补充样式：模板风格（5 套）、模态框、
+   拖拽状态、灯箱、开关、滚动条等
+   ============================================================ */
+
+/* ---------- 模态框 ---------- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(62, 44, 36, 0.45);
+    backdrop-filter: blur(2px);
+    animation: fadeIn .18s ease-out;
+}
+.modal-overlay.hidden { display: none; }
+.modal-box {
+    background: #fff;
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    box-shadow: 0 20px 50px -12px rgba(86, 40, 60, .3);
+    animation: pop .18s ease-out;
+    overflow-y: auto;
+}
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98) } to { opacity: 1; transform: none } }
+
+/* ---------- 轻提示 ---------- */
+.toast {
+    padding: .6rem 1.1rem;
+    border-radius: .9rem;
+    font-size: .85rem;
+    color: #fff;
+    box-shadow: 0 8px 24px -8px rgba(0,0,0,.3);
+    animation: fadeIn .2s ease-out;
+}
+.toast.success { background: #4c9a78; }
+.toast.error   { background: #d66; }
+.toast.info    { background: rgba(60,50,45,.9); }
+
+/* ---------- 模块栏 ---------- */
+.module-chip {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .45rem .85rem;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid #e7e2dc;
+    font-size: .875rem;
+    color: #57534e;
+    white-space: nowrap;
+    user-select: none;
+    transition: all .15s;
+}
+.module-chip:hover { border-color: #f8b4cd; color: #c1426d; }
+.module-chip .chip-count { font-size: .72rem; color: #a8a29e; }
+.module-chip .chip-btn {
+    width: 1.25rem; height: 1.25rem;
+    display: inline-grid; place-items: center;
+    border-radius: .375rem;
+    font-size: .7rem; line-height: 1;
+    color: #a8a29e;
+}
+.module-chip .chip-btn:hover { background: #fbd5e2; color: #a13358; }
+.module-chip.dragging { opacity: .4; }
+.module-chip.drop-before { box-shadow: -2px 0 0 0 #ec7ba2; }
+
+/* ---------- 模块分节 ---------- */
+.module-section { margin-bottom: 2.25rem; scroll-margin-top: 5.5rem; }
+.module-section .section-head {
+    display: flex; align-items: center; gap: .6rem;
+    margin-bottom: .9rem;
+    padding-bottom: .55rem;
+    border-bottom: 1px dashed #e7e2dc;
+}
+.module-section .section-title { font-size: 1.02rem; font-weight: 600; color: #44403c; }
+.module-section .section-count { font-size: .75rem; color: #a8a29e; }
+.module-empty { padding: 1.6rem 0; text-align: center; color: #c9c4bd; font-size: .85rem; }
+
+/* ---------- 照片卡片基础 ---------- */
+.photo-card {
+    background: #fff;
+    border-radius: .9rem;
+    overflow: hidden;
+    box-shadow: 0 4px 16px -8px rgba(134,45,75,.14);
+    transition: box-shadow .2s, transform .2s;
+    display: flex; flex-direction: column;
+}
+.photo-card:hover { box-shadow: 0 10px 26px -10px rgba(134,45,75,.28); transform: translateY(-2px); }
+.photo-card .photo-img { width: 100%; display: block; cursor: zoom-in; background: #f5f0ea; }
+.photo-card .photo-note {
+    padding: .5rem .7rem .25rem;
+    font-size: .78rem;
+    color: #78716c;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-all;
+}
+.photo-card .photo-actions {
+    display: flex; align-items: center; gap: .15rem;
+    padding: .3rem .5rem .5rem;
+    margin-top: auto;
+    flex-wrap: wrap;
+}
+.photo-card .pa {
+    border: none; background: none; cursor: pointer;
+    font-size: .72rem; color: #a8a29e;
+    padding: .22rem .4rem; border-radius: .4rem;
+}
+.photo-card .pa:hover { background: #fdf2f5; color: #c1426d; }
+.photo-card .pa.danger:hover { background: #fee2e2; color: #dc2626; }
+
+/* 拖拽状态 */
+.photo-card[draggable="true"] { cursor: grab; }
+.photo-card.dragging { opacity: .35; }
+.photo-card.drop-before { outline: 2px dashed #ec7ba2; outline-offset: 2px; }
+
+/* ---------- 风格模板 1：经典网格 ---------- */
+.tpl-grid .photo-grid, .tpl-compact .photo-grid, .tpl-timeline .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 14px;
+}
+.tpl-grid .photo-img { aspect-ratio: 1/1; object-fit: cover; }
+
+/* ---------- 风格模板 2：瀑布流 ---------- */
+.tpl-masonry .photo-grid { column-gap: 14px; column-count: 2; }
+.tpl-masonry .photo-card { break-inside: avoid; margin-bottom: 14px; }
+@media (min-width: 768px)  { .tpl-masonry .photo-grid { column-count: 3; } }
+@media (min-width: 1024px) { .tpl-masonry .photo-grid { column-count: 4; } }
+@media (min-width: 1280px) { .tpl-masonry .photo-grid { column-count: 5; } }
+
+/* ---------- 风格模板 3：拍立得 ---------- */
+.tpl-polaroid .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px 14px;
+}
+.tpl-polaroid .photo-img { aspect-ratio: 1/1; object-fit: cover; }
+.tpl-polaroid .photo-card {
+    padding: 10px 10px 6px;
+    background: #fffdf9;
+    border-radius: 4px;
+    box-shadow: 0 6px 18px -6px rgba(90, 60, 40, .35);
+}
+.tpl-polaroid .photo-card:nth-child(3n+1) { transform: rotate(-1.6deg); }
+.tpl-polaroid .photo-card:nth-child(3n+2) { transform: rotate(1.2deg); }
+.tpl-polaroid .photo-card:nth-child(3n)   { transform: rotate(-.6deg); }
+.tpl-polaroid .photo-card:hover { transform: rotate(0deg) translateY(-3px); }
+.tpl-polaroid .photo-note { font-family: "Segoe Print", "KaiTi", cursive; text-align: center; }
+
+/* ---------- 风格模板 4：时光轴 ---------- */
+.tpl-timeline .module-section {
+    position: relative;
+    padding-left: 26px;
+    border-left: 2px solid #f8b4cd;
+    margin-left: 6px;
+}
+.tpl-timeline .module-section::before {
+    content: "";
+    position: absolute;
+    left: -7px; top: 4px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #ec7ba2;
+    box-shadow: 0 0 0 4px #fdf2f5;
+}
+.tpl-timeline .photo-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.tpl-timeline .photo-img { aspect-ratio: 1/1; object-fit: cover; }
+
+/* ---------- 风格模板 5：紧凑小图 ---------- */
+.tpl-compact .photo-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.tpl-compact .photo-img { aspect-ratio: 1/1; object-fit: cover; }
+.tpl-compact .photo-card { border-radius: .6rem; }
+.tpl-compact .photo-note { display: none; }
+
+/* ---------- 上传拖拽区 ---------- */
+#dropzone.drag-over { border-color: #ec7ba2; background: #fdf2f5; transform: scale(1.01); }
+.upload-thumb { position: relative; border-radius: .7rem; overflow: hidden; aspect-ratio: 1/1; background: #f5f0ea; }
+.upload-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.upload-thumb .thumb-remove {
+    position: absolute; top: 4px; right: 4px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(0,0,0,.55); color: #fff;
+    font-size: 12px; line-height: 20px; text-align: center;
+    cursor: pointer;
+}
+.upload-thumb .thumb-invalid { position:absolute; inset:0; background:rgba(220,38,38,.75); color:#fff;
+    font-size:.68rem; display:flex; align-items:center; justify-content:center; text-align:center; padding:.25rem; }
+
+/* ---------- 开关（管理员权限配置） ---------- */
+.switch { position: relative; display: inline-block; width: 42px; height: 23px; flex: none; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch .slider {
+    position: absolute; inset: 0; cursor: pointer;
+    background: #d6d3d1; border-radius: 999px; transition: .25s;
+}
+.switch .slider::before {
+    content: "";
+    position: absolute; left: 3px; top: 3px;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: #fff; transition: .25s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+}
+.switch input:checked + .slider { background: #ec7ba2; }
+.switch input:checked + .slider::before { transform: translateX(19px); }
+.switch input:disabled + .slider { opacity: .45; cursor: not-allowed; }
+
+/* ---------- 滚动条美化 ---------- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #e0d9d0; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #cfc5b8; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* 图片加载占位 */
+img[data-src], .photo-img { animation: fadeIn .3s ease-out; }

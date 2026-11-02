@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}记录册 · 拾光记{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+    <!-- 页头：问候 + 操作区 -->
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+        <div>
+            <h1 class="font-serif text-2xl sm:text-3xl font-bold text-brand-800">记录册</h1>
+            <p class="mt-1.5 text-sm text-stone-500" id="page-subtitle">
+                {% if user.can_view_others or user.is_admin %}正在展示全部用户的记录册{% else %}收藏你的每一帧美好瞬间{% endif %}
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+            <div class="relative flex-1 min-w-[12rem] sm:flex-none">
+                <input id="search-input" type="search" value="{{ keyword }}" maxlength="50" placeholder="按名称搜索记录册…"
+                       class="w-full sm:w-64 pl-9 pr-4 py-2 rounded-xl border border-stone-300 bg-white
+                              focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">&#128269;</span>
+            </div>
+            {% if user.is_admin %}
+            <button id="btn-admin"
+                    class="px-4 py-2 rounded-xl border border-brand-300 text-brand-600 bg-white
+                           hover:bg-brand-50 text-sm font-medium transition">
+                用户权限
+            </button>
+            {% endif %}
+            <button id="btn-create"
+                    class="px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-medium shadow-card
+                           hover:bg-brand-600 active:scale-[.98] transition">
+                + 新建记录册
+            </button>
+        </div>
+    </div>
+
+    <!-- 记录册卡片网格：移动端单列，平板两列，PC 三/四列 -->
+    <div id="album-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+
+    <!-- 空状态 -->
+    <div id="empty-state" class="hidden py-20 text-center">
+        <div class="mx-auto w-20 h-20 rounded-full bg-brand-100 grid place-items-center text-4xl mb-4">&#128214;</div>
+        <p class="text-stone-500" id="empty-text">还没有记录册，点击右上角「新建记录册」开始收藏吧</p>
+    </div>
+</div>
+
+<!-- 新建记录册弹窗 -->
+<div id="create-modal" class="modal-overlay hidden">
+    <div class="modal-box w-full max-w-md">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-lg font-semibold text-stone-700">新建记录册</h3>
+            <button class="modal-close text-stone-400 hover:text-stone-600 text-xl leading-none" data-close="create-modal">&times;</button>
+        </div>
+        <form id="create-form">
+            <label class="block text-sm font-medium text-stone-600 mb-1.5">记录册名称 <span class="text-red-400">*</span></label>
+            <input id="create-name" maxlength="100" placeholder="例如：2026 春日旅行"
+                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-brand-300 transition">
+            <label class="block text-sm font-medium text-stone-600 mt-4 mb-1.5">简介</label>
+            <textarea id="create-desc" rows="3" maxlength="500" placeholder="写点什么，让这本记录册更有意义（选填）"
+                      class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-brand-300 transition resize-none"></textarea>
+            <div class="flex justify-end gap-2.5 mt-6">
+                <button type="button" class="px-4 py-2 rounded-xl border border-stone-300 text-stone-600 hover:bg-stone-100 text-sm"
+                        data-close="create-modal">取消</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-brand-500 text-white text-sm hover:bg-brand-600 transition">创建</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 管理员：用户权限配置弹窗 -->
+<div id="admin-modal" class="modal-overlay hidden">
+    <div class="modal-box w-full max-w-2xl max-h-[85vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-stone-700">用户权限配置</h3>
+                <p class="text-xs text-stone-400 mt-1">单独设置指定用户是否允许查看 / 编辑他人的记录册（管理员默认拥有全局权限）</p>
+            </div>
+            <button class="modal-close text-stone-400 hover:text-stone-600 text-xl leading-none" data-close="admin-modal">&times;</button>
+        </div>
+        <div class="overflow-auto -mx-2 px-2">
+            <table class="w-full text-sm min-w-[38rem]">
+                <thead>
+                <tr class="text-left text-stone-400 text-xs border-b border-stone-200">
+                    <th class="py-2.5 font-medium">用户</th>
+                    <th class="py-2.5 font-medium">角色</th>
+                    <th class="py-2.5 font-medium text-center">记录册</th>
+                    <th class="py-2.5 font-medium text-center">查看他人</th>
+                    <th class="py-2.5 font-medium text-center">编辑他人</th>
+                </tr>
+                </thead>
+                <tbody id="admin-user-rows" class="divide-y divide-stone-100"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 页面初始数据（服务端 Jinja 渲染 → 前端 JS 接管） -->
+<script id="index-data" type="application/json">{{ albums | tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/index.js"></script>
+{% endblock %}
