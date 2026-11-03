@@ -16,7 +16,7 @@ from app.database import get_db
 from app.dependencies import require_page_user, try_get_user
 from app.models.template import PhotoTemplate
 from app.models.user import SysUser
-from app.services import album_service, module_service, permission_service, photo_service
+from app.services import album_service, module_service, permission_service, photo_service, setting_service
 
 router = APIRouter(include_in_schema=False)
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -92,6 +92,7 @@ def album_detail(
             "nickname": user.display_name,
             "is_admin": user.is_admin,
         },
+        "max_upload_size_mb": setting_service.get_max_upload_size_mb(db),
     }
     current_css = next(
         (t["css_class"] for t in payload["templates"] if t["id"] == album.template_id),

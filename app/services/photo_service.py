@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.models.module import AlbumModule
 from app.models.photo import Photo
 from app.models.user import SysUser
-from app.services import module_service, permission_service
+from app.services import module_service, permission_service, setting_service
 from app.utils.file import guess_mime, save_image
 
 
@@ -84,12 +84,13 @@ async def upload_photos(
     """批量上传照片：逐一校验（仅 jpg/png/gif/webp，单文件 ≤5MB），保存后入库。"""
     permission_service.assert_can_edit(db, user, album_id)
     module = _load_module_for_upload(db, album_id, module_id)
+    max_size = setting_service.get_max_upload_size_mb(db) * 1024 * 1024
 
     created: list[dict] = []
     sort_order = _next_sort_order(db, module.id)
     for file in files:
         content = await file.read()
-        path, size = save_image(file.filename or "", content)  # 校验失败抛 400
+        path, size = save_image(file.filename or "", content, max_size)  # 校验失败抛 400
         photo = Photo(
             album_id=album_id,
             module_id=module.id,

@@ -194,7 +194,7 @@
 | ---- | ---- | ---- | ---- |
 | name | string | 否 | 新名称（1-100 字符） |
 | description | string | 否 | 新简介（≤500 字符） |
-| cover | file | 否 | 新封面图片（jpg/png/gif/webp，≤5MB） |
+| cover | file | 否 | 新封面图片（jpg/png/gif/webp，大小上限见上传设置） |
 
 成功：`{ "message": "保存成功", "data": { "...album": "..." } }`
 校验失败（400）：`{ "detail": "不支持的文件格式：a.bmp（仅允许 jpg/png/gif/webp）" }`
@@ -275,7 +275,7 @@
 | 字段 | 类型 | 必填 | 说明 |
 | ---- | ---- | ---- | ---- |
 | module_id | int | 否 | 目标模块（缺省为第一个模块） |
-| files | file[] | 是 | 多文件；仅 jpg/png/gif/webp，单文件 ≤5MB |
+| files | file[] | 是 | 多文件；仅 jpg/png/gif/webp，单文件大小上限见「管理员-系统设置」 |
 
 成功：
 
@@ -291,7 +291,7 @@
 }
 ```
 
-失败（400）：`{ "detail": "文件超过 5MB 上限：big.png" }`
+失败（400）：`{ "detail": "文件超过 5MB 上限：big.png" }`（上限值随管理员设置变化）
 
 ### 4.2 模块内照片拖拽排序
 
@@ -410,6 +410,30 @@
 
 失败：
 - 400：`{ "detail": "账号已存在，请更换后重试" }` / `{ "detail": "角色不存在：ADMIN / USER" }`
+- 403：`{ "detail": "仅管理员可执行该操作" }`
+
+### 5.4 系统设置（上传大小上限）
+
+`GET /api/admin/settings`（仅管理员）
+
+成功：
+
+```json
+{ "message": "ok", "data": { "max_upload_size": 5 } }
+```
+
+`PUT /api/admin/settings`（仅管理员，保存后立即对新上传生效）
+
+```json
+{ "max_upload_size": 10 }
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+| ---- | ---- | ---- | ---- |
+| max_upload_size | int | 否 | 单文件上传上限（MB），范围 1-100 |
+
+失败：
+- 422：`max_upload_size` 不在 1-100 范围
 - 403：`{ "detail": "仅管理员可执行该操作" }`
 
 ---

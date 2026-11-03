@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-"""管理员接口：用户列表与用户权限开关配置。"""
+"""管理员接口：用户列表、用户权限开关配置、系统设置（上传大小上限）。"""
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import SysUser
+from app.schemas.setting import SettingUpdate
 from app.schemas.user import PermissionUpdate, UserCreate
-from app.services import admin_service
+from app.services import admin_service, setting_service
 
 router = APIRouter(prefix="/api/admin", tags=["管理员"])
 
@@ -42,4 +43,26 @@ def update_permissions(
     return {
         "message": "权限已更新",
         "data": admin_service.update_permissions(db, user, user_id, body),
+    }
+
+
+@router.get("/settings", summary="系统设置（当前含上传大小上限）")
+def get_settings(
+    db: Session = Depends(get_db),
+    user: SysUser = Depends(get_current_user),
+) -> dict:
+    """仅管理员可访问。"""
+    return {"message": "ok", "data": setting_service.get_settings(db, user)}
+
+
+@router.put("/settings", summary="更新系统设置")
+def update_settings(
+    body: SettingUpdate,
+    db: Session = Depends(get_db),
+    user: SysUser = Depends(get_current_user),
+) -> dict:
+    """仅管理员可访问；max_upload_size 单位为 MB（1-100），即时生效。"""
+    return {
+        "message": "设置已保存",
+        "data": setting_service.update_settings(db, user, body),
     }

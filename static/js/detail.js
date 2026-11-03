@@ -18,6 +18,7 @@
     };
     var albumId = state.album.id;
     var canEdit = !!state.album.can_edit;
+    var maxUploadMb = DATA.max_upload_size_mb || 5;
     var esc = window.escapeHtml;
     var photoArea = document.getElementById('photo-area');
 
@@ -43,7 +44,19 @@
         state.album = res.data.album;
         state.modules = res.data.modules;
         state.photos = res.data.photos;
+        if (res.data.max_upload_size_mb) {
+            maxUploadMb = res.data.max_upload_size_mb;
+            renderUploadHints();
+        }
         renderAll();
+    }
+
+    /** 上传提示文案（大小上限由管理员配置，可能变化） */
+    function renderUploadHints() {
+        var uploadHint = document.getElementById('upload-size-hint');
+        var coverHint = document.getElementById('cover-size-hint');
+        if (uploadHint) uploadHint.textContent = maxUploadMb;
+        if (coverHint) coverHint.textContent = maxUploadMb;
     }
 
     /* ================= 渲染 ================= */
@@ -381,9 +394,10 @@
     }
 
     function addFiles(fileList) {
+        var maxSize = maxUploadMb * 1024 * 1024;
         Array.prototype.forEach.call(fileList, function (file) {
             var ext = (file.name.split('.').pop() || '').toLowerCase();
-            var invalid = !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) || file.size > 5 * 1024 * 1024;
+            var invalid = !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) || file.size > maxSize;
             pendingFiles.push({ file: file, invalid: invalid });
         });
         renderUploadPreview();
@@ -431,7 +445,7 @@
 
     document.getElementById('btn-upload-submit').addEventListener('click', async function () {
         var valid = pendingFiles.filter(function (item) { return !item.invalid; });
-        if (!valid.length) { window.toast('请先选择符合要求的图片（jpg/png/gif/webp，≤5MB）', 'error'); return; }
+        if (!valid.length) { window.toast('请先选择符合要求的图片（jpg/png/gif/webp，≤' + maxUploadMb + 'MB）', 'error'); return; }
         var form = new FormData();
         form.append('module_id', moduleSelect.value);
         valid.forEach(function (item) { form.append('files', item.file, item.file.name); });
@@ -592,5 +606,6 @@
 
     /* ================= 初始化 ================= */
 
+    renderUploadHints();
     renderAll();
 })();

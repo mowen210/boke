@@ -63,6 +63,7 @@ expected = [
     "/api/albums/{album_id}/photos", "/api/albums/{album_id}/photos/sort",
     "/api/photos/{photo_id}/note", "/api/photos/{photo_id}/move", "/api/photos/{photo_id}",
     "/api/admin/users", "/api/admin/users/{user_id}/permissions",
+    "/api/admin/settings",
 ]
 missing = [p for p in expected if p not in paths]
 check("OpenAPI 覆盖全部业务接口", not missing, f"missing={missing}")

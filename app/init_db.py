@@ -17,6 +17,7 @@ from app.config import (
 )
 from app.database import Base, SessionLocal, engine
 from app.models import AlbumModule, PhotoAlbum, PhotoTemplate, SysRole, SysUser
+from app.services import setting_service
 from app.utils.security import hash_password
 
 
@@ -139,6 +140,7 @@ def init_database() -> None:
     try:
         roles = _seed_roles(db)
         _seed_templates(db)
+        setting_service.seed_settings(db)
         # 初始管理员：admin / admin123（全局权限）
         _seed_user(db, roles["ADMIN"], "admin", "admin123", "系统管理员", True, True)
         # 演示普通用户：demo / 123456（仅自己的数据）

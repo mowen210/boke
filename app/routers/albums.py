@@ -9,7 +9,13 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import SysUser
 from app.schemas.album import AlbumCreate, AlbumUpdate, TemplateUpdate
-from app.services import album_service, module_service, permission_service, photo_service
+from app.services import (
+    album_service,
+    module_service,
+    permission_service,
+    photo_service,
+    setting_service,
+)
 from app.utils.file import save_image
 
 router = APIRouter(prefix="/api/albums", tags=["记录册"])
@@ -48,6 +54,7 @@ def get_album_detail(
             "album": album_service.album_brief(db, user, album),
             "modules": module_service.list_modules(db, album.id),
             "photos": photo_service.list_photos(db, album.id),
+            "max_upload_size_mb": setting_service.get_max_upload_size_mb(db),
         },
     }
 
@@ -65,7 +72,8 @@ def update_album(
     cover_path = None
     if cover and cover.filename:
         content = cover.file.read()
-        cover_path, _ = save_image(cover.filename, content)
+        max_size = setting_service.get_max_upload_size_mb(db) * 1024 * 1024
+        cover_path, _ = save_image(cover.filename, content, max_size)
     body = AlbumUpdate(name=name, description=description)
     return {"message": "保存成功", "data": album_service.update_album(db, user, album_id, body, cover_path)}
 

@@ -1,7 +1,7 @@
 /* ============================================================
    index.js — 首页（记录册列表）交互
    卡片渲染 / 模糊搜索（防抖）/ 新建记录册 / 删除 /
-   管理员用户权限开关配置
+   管理员用户权限开关配置 / 上传大小上限设置
    ============================================================ */
 (function () {
     'use strict';
@@ -132,8 +132,28 @@
                     '</td>' +
                     '</tr>';
             }).join('');
+            await loadSettings();
             window.openModal('admin-modal');
         }
+
+        // ---- 管理员：上传设置（单张大小上限） ----
+        var maxUploadInput = document.getElementById('setting-max-upload');
+
+        async function loadSettings() {
+            var res = await window.api('/api/admin/settings');
+            maxUploadInput.value = res.data.max_upload_size;
+        }
+
+        document.getElementById('btn-save-settings').addEventListener('click', async function () {
+            var value = Number(maxUploadInput.value);
+            if (!Number.isInteger(value) || value < 1 || value > 100) {
+                window.toast('上传上限需为 1-100 的整数（MB）', 'error');
+                maxUploadInput.focus();
+                return;
+            }
+            await window.api('/api/admin/settings', { method: 'PUT', body: { max_upload_size: value } });
+            window.toast('上传设置已保存，单张上限 ' + value + 'MB', 'success');
+        });
 
         // 开关切换即保存
         userRows.addEventListener('change', async function (e) {

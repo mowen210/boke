@@ -70,7 +70,7 @@
                     hover:border-brand-400 hover:bg-brand-50/40 transition">
             <div class="text-4xl mb-2">&#128228;</div>
             <p class="text-sm text-stone-500">点击选择或拖拽图片到此处（支持多选）</p>
-            <p class="text-xs text-stone-400 mt-1">仅支持 jpg / png / gif / webp，单张不超过 5MB</p>
+            <p class="text-xs text-stone-400 mt-1">仅支持 jpg / png / gif / webp，单张不超过 <span id="upload-size-hint">5</span>MB</p>
         </div>
         <input id="upload-input" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" multiple class="hidden">
 
@@ -111,7 +111,7 @@
                     <input id="edit-cover" type="file" accept=".jpg,.jpeg,.png,.gif,.webp"
                            class="block w-full text-sm text-stone-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg
                                   file:border-0 file:bg-brand-50 file:text-brand-600 hover:file:bg-brand-100 cursor-pointer">
-                    <p class="text-xs text-stone-400 mt-1.5">jpg / png / gif / webp，≤ 5MB，不选则保持原封面</p>
+                    <p class="text-xs text-stone-400 mt-1.5">jpg / png / gif / webp，≤ <span id="cover-size-hint">5</span>MB，不选则保持原封面</p>
                 </div>
             </div>
 

@@ -5,5 +5,6 @@ from app.models.album import PhotoAlbum
 from app.models.module import AlbumModule
 from app.models.photo import Photo
 from app.models.template import PhotoTemplate
+from app.models.setting import SysSetting
 
-__all__ = ["SysRole", "SysUser", "PhotoAlbum", "AlbumModule", "Photo", "PhotoTemplate"]
+__all__ = ["SysRole", "SysUser", "PhotoAlbum", "AlbumModule", "Photo", "PhotoTemplate", "SysSetting"]

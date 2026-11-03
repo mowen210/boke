@@ -123,7 +123,9 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 - 数据库仅保存相对访问路径（如 `/upload/202611/xx.jpg`），由 FastAPI 静态挂载 `/upload` 直接对外提供；
 - 如需更换存储位置，修改 `.env` 无法直接调整（路径固定为项目内 `upload/`），
   可修改 `app/config.py` 中 `UPLOAD_DIR`，并将新目录以同样方式挂载（见 `main.py`）；
-- 上传校验：仅 jpg / jpeg / png / gif / webp，单文件 ≤ 5MB（前后端双重校验）；
+- 上传校验：仅 jpg / jpeg / png / gif / webp，单文件大小上限默认 5MB（前后端双重校验）；
+  上限可由管理员在首页「用户权限」弹窗的「上传设置」中调整（1-100MB，存于 `sys_setting` 表，
+  初始值取 `.env` 的 `MAX_UPLOAD_SIZE_MB`）；
 - 删除照片为软删除，物理文件保留以便恢复；可按 `photo.is_deleted=1` 的记录定期清理磁盘。
 
 ## 权限模型速查
