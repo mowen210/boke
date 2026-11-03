@@ -15,6 +15,8 @@ from app.schemas.album import AlbumCreate, AlbumUpdate
 from app.services import permission_service
 
 DEFAULT_TEMPLATE_CODE = "grid"
+# 未自定义封面时的占位图（数据库默认值，见 models/album.py）
+DEFAULT_COVER = "/static/img/default_cover.svg"
 
 
 def get_album(db: Session, album_id: int) -> Optional[PhotoAlbum]:
@@ -24,6 +26,43 @@ def get_album(db: Session, album_id: int) -> Optional[PhotoAlbum]:
         .filter(PhotoAlbum.id == album_id, PhotoAlbum.is_deleted == False)  # noqa: E712
         .first()
     )
+
+
+def _first_photo_covers(db: Session, album_ids: list[int]) -> dict[int, str]:
+    """批量取各记录册「第一个模块的第一张照片」路径，作为未自定义封面时的回退。
+
+    排序规则与详情页一致：模块 sort_order → 模块 id → 照片 sort_order → 照片 id。
+    """
+    if not album_ids:
+        return {}
+    rows = (
+        db.query(Photo.album_id, Photo.file_path)
+        .join(AlbumModule, AlbumModule.id == Photo.module_id)
+        .filter(
+            Photo.album_id.in_(album_ids),
+            Photo.is_deleted == False,  # noqa: E712
+            AlbumModule.is_deleted == False,  # noqa: E712
+        )
+        .order_by(
+            Photo.album_id.asc(),
+            AlbumModule.sort_order.asc(),
+            AlbumModule.id.asc(),
+            Photo.sort_order.asc(),
+            Photo.id.asc(),
+        )
+        .all()
+    )
+    covers: dict[int, str] = {}
+    for album_id, file_path in rows:
+        covers.setdefault(album_id, file_path)
+    return covers
+
+
+def _cover_image(album: PhotoAlbum, fallbacks: dict[int, str]) -> str:
+    """封面取值：自定义封面优先；未自定义时回退到第一模块第一张照片，仍无则占位图。"""
+    if album.cover_image and album.cover_image != DEFAULT_COVER:
+        return album.cover_image
+    return fallbacks.get(album.id) or album.cover_image or DEFAULT_COVER
 
 
 def _default_template(db: Session) -> Optional[PhotoTemplate]:
@@ -65,12 +104,18 @@ def list_albums(db: Session, user: SysUser, keyword: str = "") -> list[dict]:
         )
         counts = {album_id: cnt for album_id, cnt in stat}
 
+    # 未自定义封面的记录册：回退取第一模块第一张照片
+    fallback_covers = _first_photo_covers(
+        db,
+        [a.id for a, _, _ in rows if not a.cover_image or a.cover_image == DEFAULT_COVER],
+    )
+
     return [
         {
             "id": album.id,
             "name": album.name,
             "description": album.description,
-            "cover_image": album.cover_image,
+            "cover_image": _cover_image(album, fallback_covers),
             "template_id": album.template_id,
             "create_time": album.create_time.strftime("%Y-%m-%d %H:%M"),
             "owner_id": album.user_id,
@@ -90,11 +135,15 @@ def album_brief(db: Session, user: SysUser, album: PhotoAlbum) -> dict:
         .filter(Photo.album_id == album.id, Photo.is_deleted == False)  # noqa: E712
         .scalar()
     )
+    fallback_covers = _first_photo_covers(
+        db,
+        [album.id] if not album.cover_image or album.cover_image == DEFAULT_COVER else [],
+    )
     return {
         "id": album.id,
         "name": album.name,
         "description": album.description,
-        "cover_image": album.cover_image,
+        "cover_image": _cover_image(album, fallback_covers),
         "template_id": album.template_id,
         "create_time": album.create_time.strftime("%Y-%m-%d %H:%M"),
         "owner_id": album.user_id,
