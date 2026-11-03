@@ -28,7 +28,7 @@
             }
         };
     </script>
-    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="/static/css/app.css?v=20261103">
 </head>
 <body class="min-h-screen flex flex-col bg-cream text-stone-800 antialiased">
     {# 顶部导航：登录页不渲染 #}
@@ -104,9 +104,9 @@
     {# 全局轻提示容器 #}
     <div id="toast-box" class="fixed top-16 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center gap-2 pointer-events-none"></div>
 
-    <script src="/static/js/common.js"></script>
+    <script src="/static/js/common.js?v=20261103"></script>
     {% if user is defined and user %}
-    <script src="/static/js/password.js"></script>
+    <script src="/static/js/password.js?v=20261103"></script>
     {% endif %}
     {% block scripts %}{% endblock %}
 </body>
