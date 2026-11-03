@@ -54,6 +54,11 @@ erDiagram
         varchar css_class
         tinyint is_default
     }
+    sys_setting {
+        varchar setting_key PK "如 max_upload_size"
+        varchar setting_value
+        varchar remark
+    }
 ```
 
 关系要点：
@@ -66,6 +71,7 @@ erDiagram
 | photo_album 1 → N photo、album_module 1 → N photo | 照片归属记录册并归类到模块，删除模块时照片自动移入剩余模块 |
 | photo_template 1 → N photo_album | 每本记录册绑定一套展示模板，可一键切换整册排版风格 |
 | sys_user 1 → N photo | 记录上传人，便于审计 |
+| sys_setting（独立键值表） | 管理员可调的运行时配置（当前含上传大小上限 max_upload_size，单位 MB） |
 
 权限模型说明：
 
@@ -146,6 +152,14 @@ erDiagram
 | file_type | VARCHAR(32) | MIME 类型 |
 | note | VARCHAR(500) | 照片独立文字备注 |
 | sort_order | INT | 模块内排序号（越小越靠前，支持拖拽更新） |
+
+### 7. sys_setting 系统设置表
+
+主键为 `setting_key`（无自增 id）。当前内置键：
+
+| setting_key | 说明 |
+| ----------- | ---- |
+| max_upload_size | 上传大小上限（MB），范围 1-100，管理员在前端「用户权限」弹窗中调整，即时生效 |
 
 ## 三、索引说明
 

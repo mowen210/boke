@@ -134,6 +134,20 @@ CREATE TABLE IF NOT EXISTS photo (
     CONSTRAINT fk_photo_user FOREIGN KEY (user_id) REFERENCES sys_user (id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '照片表';
 
+-- ------------------------------------------------------------
+-- 7. 系统设置表 sys_setting
+-- 键值对配置（如上传大小上限），管理员可在前端调整，即时生效
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS sys_setting (
+    setting_key   VARCHAR(64)  NOT NULL                COMMENT '设置键：如 max_upload_size',
+    setting_value VARCHAR(255) NOT NULL                COMMENT '设置值（字符串存储，业务侧自行转换类型）',
+    remark        VARCHAR(255) DEFAULT NULL            COMMENT '设置说明',
+    create_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    is_deleted    TINYINT(1)   NOT NULL DEFAULT 0      COMMENT '软删除标识：0正常 1已删除',
+    PRIMARY KEY (setting_key)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统设置表';
+
 -- ============================================================
 -- 内置种子数据（角色 + 展示模板）
 -- 初始管理员/演示用户由应用首次启动自动创建：
@@ -151,3 +165,8 @@ INSERT INTO photo_template (code, name, css_class, description, sort_order, is_d
     ('timeline', '时光轴',   'tpl-timeline', '左侧时间轴线的纵向回忆列表', 4, 0),
     ('compact',  '紧凑小图', 'tpl-compact',  '高密度小图排版，一屏纵览全部照片', 5, 0)
 ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+-- 系统设置种子（初始值取 .env 的 MAX_UPLOAD_SIZE_MB，应用启动时若无记录会自动补写）
+INSERT INTO sys_setting (setting_key, setting_value, remark) VALUES
+    ('max_upload_size', '5', '上传大小上限（MB），范围 1-100')
+ON DUPLICATE KEY UPDATE remark = VALUES(remark);
