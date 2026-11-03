@@ -8,7 +8,12 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import SysUser
-from app.schemas.photo import PhotoMoveRequest, PhotoNoteUpdate, PhotoSortRequest
+from app.schemas.photo import (
+    PhotoBatchDeleteRequest,
+    PhotoMoveRequest,
+    PhotoNoteUpdate,
+    PhotoSortRequest,
+)
 from app.services import photo_service
 
 router = APIRouter(tags=["照片"])
@@ -71,3 +76,15 @@ def delete_photo(
 ) -> dict:
     photo_service.delete_photo(db, user, photo_id)
     return {"message": "照片已删除"}
+
+
+@router.delete("/api/albums/{album_id}/photos", summary="批量删除照片（仅管理员）")
+def batch_delete_photos(
+    album_id: int,
+    body: PhotoBatchDeleteRequest,
+    db: Session = Depends(get_db),
+    user: SysUser = Depends(get_current_user),
+) -> dict:
+    """JSON 请求体：photo_ids 待删除照片ID列表（须全部属于该记录册）。"""
+    count = photo_service.batch_delete_photos(db, user, album_id, body.photo_ids)
+    return {"message": f"已删除 {count} 张照片"}

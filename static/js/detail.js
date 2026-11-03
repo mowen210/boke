@@ -2,7 +2,8 @@
    detail.js — 记录册详情页交互
    模块管理（新增/改名/删除/拖拽排序）、照片批量上传（拖拽+预览）、
    大图灯箱、备注、移动模块、删除、模块内拖拽排序、
-   记录册信息编辑、展示风格模板一键切换
+   记录册信息编辑、展示风格模板一键切换、
+   管理员批量删除模块内照片（勾选模式）
    ============================================================ */
 (function () {
     'use strict';
@@ -18,9 +19,13 @@
     };
     var albumId = state.album.id;
     var canEdit = !!state.album.can_edit;
+    var isAdmin = !!state.currentUser.is_admin;
     var maxUploadMb = DATA.max_upload_size_mb || 5;
     var esc = window.escapeHtml;
     var photoArea = document.getElementById('photo-area');
+
+    /* 批量选择模式（仅管理员）：moduleId 当前操作的模块，ids 已选照片ID */
+    var batchMode = { moduleId: null, ids: [] };
 
     /* ================= 通用小工具 ================= */
 
@@ -146,8 +151,19 @@
                 '<section class="module-section" id="section-' + m.id + '" data-module-id="' + m.id + '">' +
                 '  <div class="section-head">' +
                 '    <span class="section-title">' + esc(m.title) + '</span>' +
-                '    <span class="section-count">' + photos.length + ' 张</span>' +
+                '    <span class="section-count">' +
+                (batchMode.moduleId === m.id
+                    ? '已选 <b id="batch-count">' + batchMode.ids.length + '</b> / ' + photos.length + ' 张'
+                    : photos.length + ' 张') + '</span>' +
                 (canEdit ? '<span class="ml-auto text-[11px] text-stone-300 hidden md:inline">拖拽照片可排序</span>' : '') +
+                (batchMode.moduleId === m.id
+                    ? '<button class="batch-btn" data-op="select-all" data-module-id="' + m.id + '">全选</button>' +
+                      '<button class="batch-btn danger" data-op="batch-delete" data-module-id="' + m.id + '">删除所选</button>' +
+                      '<button class="batch-btn" data-op="batch-cancel">取消</button>'
+                    : (isAdmin
+                        ? '<button class="batch-btn' + (canEdit ? ' ml-2' : ' ml-auto') + '" data-op="batch-enter" data-module-id="' + m.id + '"' +
+                          ' title="批量删除本模块照片">批量删除</button>'
+                        : '')) +
                 '  </div>' +
                 '  <div class="photo-grid" data-module-id="' + m.id + '">' +
                 (cards || '<div class="module-empty col-span-full">这个模块还没有照片</div>') +
@@ -159,10 +175,21 @@
 
     /** 单张照片卡片 */
     function photoCardHtml(p) {
+        var note = p.note ? esc(p.note) : '<span class="italic text-stone-300">未添加备注</span>';
+        // 批量选择模式：卡片带勾选标记，点击整卡切换选中，禁用拖拽与单张操作
+        if (batchMode.moduleId === p.module_id) {
+            var selected = batchMode.ids.indexOf(p.id) > -1;
+            return '' +
+                '<figure class="photo-card batch-mode' + (selected ? ' selected' : '') + '" data-photo-id="' + p.id + '">' +
+                '  <span class="select-check">&#10003;</span>' +
+                '  <img class="photo-img" src="' + esc(p.file_path) + '" alt="' + esc(p.original_name || '') + '" loading="lazy">' +
+                '  <figcaption class="photo-note">' + note + '</figcaption>' +
+                '</figure>';
+        }
         return '' +
             '<figure class="photo-card" draggable="true" data-photo-id="' + p.id + '" title="拖拽排序，点击图片看大图">' +
             '  <img class="photo-img" src="' + esc(p.file_path) + '" alt="' + esc(p.original_name || '') + '" loading="lazy">' +
-            '  <figcaption class="photo-note">' + (p.note ? esc(p.note) : '<span class="italic text-stone-300">未添加备注</span>') + '</figcaption>' +
+            '  <figcaption class="photo-note">' + note + '</figcaption>' +
             '  <div class="photo-actions">' +
             (canEdit
                 ? '<button class="pa" data-op="note" title="编辑备注">&#9998; 备注</button>' +
@@ -177,7 +204,70 @@
 
     /* ================= 照片操作（事件委托） ================= */
 
+    /** 退出批量选择模式并恢复渲染 */
+    function exitBatchMode() {
+        batchMode.moduleId = null;
+        batchMode.ids = [];
+        renderSections();
+    }
+
+    /** 切换单张照片选中态（仅更新 DOM，不整体重绘） */
+    function toggleBatchSelected(photoId) {
+        var idx = batchMode.ids.indexOf(photoId);
+        if (idx > -1) batchMode.ids.splice(idx, 1);
+        else batchMode.ids.push(photoId);
+        var card = photoArea.querySelector('.photo-card[data-photo-id="' + photoId + '"]');
+        if (card) {
+            card.classList.toggle('selected', idx === -1);
+            var count = document.getElementById('batch-count');
+            if (count) count.textContent = batchMode.ids.length;
+        }
+    }
+
     photoArea.addEventListener('click', async function (e) {
+        // ---- 管理员批量删除按钮（进入/全选/删除所选/取消） ----
+        var batchBtn = e.target.closest('.batch-btn');
+        if (batchBtn) {
+            var batchOp = batchBtn.getAttribute('data-op');
+            var batchModuleId = Number(batchBtn.getAttribute('data-module-id'));
+            if (batchOp === 'batch-enter') {
+                batchMode.moduleId = batchModuleId;
+                batchMode.ids = [];
+                renderSections();
+                return;
+            }
+            if (batchOp === 'batch-cancel') {
+                exitBatchMode();
+                return;
+            }
+            if (batchOp === 'select-all') {
+                var allIds = photosOf(batchModuleId).map(function (p) { return p.id; });
+                batchMode.ids = batchMode.ids.length === allIds.length ? [] : allIds;
+                renderSections();
+                return;
+            }
+            if (batchOp === 'batch-delete') {
+                if (!batchMode.ids.length) { window.toast('请先勾选要删除的照片', 'error'); return; }
+                if (!window.confirm('确定删除已选的 ' + batchMode.ids.length + ' 张照片吗？')) return;
+                var res = await window.api('/api/albums/' + albumId + '/photos', {
+                    method: 'DELETE', body: { photo_ids: batchMode.ids.slice() }
+                });
+                window.toast(res.message || '照片已删除', 'success');
+                batchMode.moduleId = null;
+                batchMode.ids = [];
+                await refresh();
+                return;
+            }
+            return;
+        }
+
+        // ---- 批量选择模式：点击卡片切换选中，屏蔽灯箱/单张操作/排序 ----
+        if (batchMode.moduleId !== null) {
+            var selCard = e.target.closest('.photo-card');
+            if (selCard) toggleBatchSelected(Number(selCard.getAttribute('data-photo-id')));
+            return;
+        }
+
         var btn = e.target.closest('.pa');
         if (!btn) {
             var img = e.target.closest('.photo-img');

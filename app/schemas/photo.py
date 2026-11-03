@@ -20,3 +20,9 @@ class PhotoSortRequest(BaseModel):
 
     module_id: int = Field(gt=0, description="照片所属模块ID")
     photo_ids: list[int] = Field(min_length=1, description="排序后的照片ID列表")
+
+
+class PhotoBatchDeleteRequest(BaseModel):
+    """批量删除照片（仅管理员）。"""
+
+    photo_ids: list[int] = Field(min_length=1, description="待删除的照片ID列表")

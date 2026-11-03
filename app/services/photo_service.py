@@ -154,6 +154,30 @@ def delete_photo(db: Session, user: SysUser, photo_id: int) -> None:
     db.commit()
 
 
+def batch_delete_photos(db: Session, user: SysUser, album_id: int, photo_ids: list[int]) -> int:
+    """批量删除照片（软删除，仅管理员）。返回实际删除数量。
+
+    :param photo_ids: 待删除照片ID列表，须全部属于该记录册且未删除，否则抛 400
+    """
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="仅管理员可批量删除照片")
+    photos = (
+        db.query(Photo)
+        .filter(
+            Photo.album_id == album_id,
+            Photo.id.in_(photo_ids),
+            Photo.is_deleted == False,  # noqa: E712
+        )
+        .all()
+    )
+    if len(photos) != len(set(photo_ids)):
+        raise HTTPException(status_code=400, detail="删除列表包含无效照片")
+    for photo in photos:
+        photo.is_deleted = True
+    db.commit()
+    return len(photos)
+
+
 def reorder_photos(
     db: Session, user: SysUser, album_id: int, module_id: int, photo_ids: list[int]
 ) -> list[dict]:

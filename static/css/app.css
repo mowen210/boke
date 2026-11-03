@@ -25,6 +25,9 @@
     box-shadow: 0 20px 50px -12px rgba(86, 40, 60, .3);
     animation: pop .18s ease-out;
     overflow-y: auto;
+    /* 弹窗不超出屏幕：内容过多时在弹窗内部滚动，避免操作按钮被挤出可视区（移动端关键） */
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
 }
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98) } to { opacity: 1; transform: none } }
@@ -123,6 +126,31 @@
 .photo-card[draggable="true"] { cursor: grab; }
 .photo-card.dragging { opacity: .35; }
 .photo-card.drop-before { outline: 2px dashed #ec7ba2; outline-offset: 2px; }
+
+/* ---------- 批量选择模式（管理员批量删除模块内照片） ---------- */
+.photo-card { position: relative; }
+.photo-card .select-check {
+    position: absolute; top: 8px; left: 8px; z-index: 5;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(255, 255, 255, .9);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, .35);
+    display: grid; place-items: center;
+    color: transparent; font-size: 14px; font-weight: 700;
+    transition: all .15s;
+}
+.photo-card.selected { outline: 2px solid #ec7ba2; outline-offset: 2px; }
+.photo-card.selected .select-check { background: #ec7ba2; color: #fff; }
+.photo-card.batch-mode .photo-img { cursor: pointer; }
+.photo-card.batch-mode .photo-note { opacity: .55; }
+.batch-btn {
+    flex: none;
+    border: 1px solid #e7e2dc; background: #fff; color: #78716c;
+    font-size: .72rem; padding: .28rem .65rem; border-radius: .55rem;
+    cursor: pointer; white-space: nowrap; transition: all .15s;
+}
+.batch-btn:hover { border-color: #ec7ba2; color: #c1426d; background: #fdf2f5; }
+.batch-btn.danger { color: #dc2626; border-color: #fecaca; }
+.batch-btn.danger:hover { background: #fee2e2; border-color: #dc2626; color: #b91c1c; }
 
 /* ---------- 风格模板 1：经典网格 ---------- */
 .tpl-grid .photo-grid, .tpl-compact .photo-grid, .tpl-timeline .photo-grid {
