@@ -80,6 +80,30 @@
 }
 ```
 
+### 1.4 修改自身密码
+
+`PUT /api/auth/password`（需登录）
+
+请求体（JSON）：
+
+| 字段 | 类型 | 必填 | 说明 |
+| ---- | ---- | ---- | ---- |
+| old_password | string | 是 | 原密码，6-64 字符 |
+| new_password | string | 是 | 新密码，6-64 字符 |
+| confirm_password | string | 是 | 确认新密码，须与 new_password 一致 |
+
+请求示例：
+
+```json
+{ "old_password": "123456", "new_password": "abc123456", "confirm_password": "abc123456" }
+```
+
+成功（200）：`{ "message": "密码修改成功", "data": { "username": "demo" } }`
+
+失败：
+- 400：`{ "detail": "原密码错误" }` / `{ "detail": "两次输入的新密码不一致" }` / `{ "detail": "新密码不能与原密码相同" }`
+- 401：未登录
+
 ---
 
 ## 2. 记录册
@@ -346,6 +370,47 @@
   "data": { "id": 2, "username": "demo", "can_view_others": true, "can_edit_others": false }
 }
 ```
+
+### 5.3 新增用户
+
+`POST /api/admin/users`（仅管理员）
+
+请求体（JSON）：
+
+| 字段 | 类型 | 必填 | 说明 |
+| ---- | ---- | ---- | ---- |
+| username | string | 是 | 登录账号，2-64 字符，全库唯一 |
+| password | string | 是 | 初始密码，6-64 字符 |
+| nickname | string | 否 | 昵称，≤64 字符，缺省同账号 |
+| role_code | string | 否 | 角色编码：ADMIN / USER，缺省 USER |
+| can_view_others | boolean | 否 | 允许查看他人记录册，缺省 false |
+| can_edit_others | boolean | 否 | 允许编辑他人记录册，缺省 false |
+
+请求示例：
+
+```json
+{
+  "username": "xiaoming", "password": "abc123456", "nickname": "小明",
+  "role_code": "USER", "can_view_others": false, "can_edit_others": false
+}
+```
+
+成功（200）：
+
+```json
+{
+  "message": "用户创建成功",
+  "data": {
+    "id": 3, "username": "xiaoming", "nickname": "小明", "display_name": "小明",
+    "role_code": "USER", "role_name": "普通用户", "is_admin": false,
+    "can_view_others": false, "can_edit_others": false
+  }
+}
+```
+
+失败：
+- 400：`{ "detail": "账号已存在，请更换后重试" }` / `{ "detail": "角色不存在：ADMIN / USER" }`
+- 403：`{ "detail": "仅管理员可执行该操作" }`
 
 ---
 

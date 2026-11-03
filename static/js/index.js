@@ -114,8 +114,7 @@
 
         async function loadUsers() {
             var res = await window.api('/api/admin/users');
-            userRows.innerHTML = res.data.map(function (u) {
-                var disableSwitch = u.is_admin ? 'disabled title="管理员默认拥有全局权限"' : '';
+            userRows.innerHTML = res.data.map(function (u) {                var disableSwitch = u.is_admin ? 'disabled title="管理员默认拥有全局权限"' : '';
                 return '<tr>' +
                     '<td class="py-3">' +
                     '  <div class="font-medium text-stone-700">' + esc(u.display_name) + (u.is_admin ? ' <span class="text-[10px] align-middle px-1.5 py-0.5 rounded bg-brand-100 text-brand-700">管理员</span>' : '') + '</div>' +
@@ -146,6 +145,65 @@
                 method: 'PUT', body: body
             });
             window.toast('权限已更新', 'success');
+        });
+
+        // ---- 管理员：新增用户 ----
+        var userForm = document.getElementById('user-form');
+        var usernameInput = document.getElementById('user-username');
+        var nicknameInput = document.getElementById('user-nickname');
+        var passwordInput = document.getElementById('user-password');
+        var roleSelect = document.getElementById('user-role');
+        var canViewInput = document.getElementById('user-can-view');
+        var canEditInput = document.getElementById('user-can-edit');
+        var userSubmitBtn = document.getElementById('btn-user-submit');
+
+        document.getElementById('btn-add-user').addEventListener('click', function () {
+            userForm.reset();
+            roleSelect.value = 'USER';
+            syncRoleSwitches();
+            userSubmitBtn.disabled = false;
+            userSubmitBtn.textContent = '创建用户';
+            window.openModal('user-modal');
+        });
+
+        // 管理员默认拥有全局权限，选中 ADMIN 时禁用权限开关
+        function syncRoleSwitches() {
+            var isAdminRole = roleSelect.value === 'ADMIN';
+            canViewInput.disabled = isAdminRole;
+            canEditInput.disabled = isAdminRole;
+        }
+        roleSelect.addEventListener('change', syncRoleSwitches);
+
+        userForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var username = usernameInput.value.trim();
+            var password = passwordInput.value;
+            if (!username) { window.toast('请填写账号', 'error'); usernameInput.focus(); return; }
+            if (username.length < 2) { window.toast('账号至少 2 个字符', 'error'); usernameInput.focus(); return; }
+            if (!password) { window.toast('请填写初始密码', 'error'); passwordInput.focus(); return; }
+            if (password.length < 6) { window.toast('密码至少 6 位', 'error'); passwordInput.focus(); return; }
+
+            userSubmitBtn.disabled = true;
+            userSubmitBtn.textContent = '创建中…';
+            try {
+                await window.api('/api/admin/users', {
+                    method: 'POST',
+                    body: {
+                        username: username,
+                        password: password,
+                        nickname: nicknameInput.value.trim() || null,
+                        role_code: roleSelect.value,
+                        can_view_others: canViewInput.checked,
+                        can_edit_others: canEditInput.checked
+                    }
+                });
+                window.closeModal('user-modal');
+                window.toast('用户「' + username + '」创建成功', 'success');
+                await loadUsers();
+            } catch (err) {
+                userSubmitBtn.disabled = false;
+                userSubmitBtn.textContent = '创建用户';
+            }
         });
     }
 

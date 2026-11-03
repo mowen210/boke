@@ -69,12 +69,19 @@
 <!-- 管理员：用户权限配置弹窗 -->
 <div id="admin-modal" class="modal-overlay hidden">
     <div class="modal-box w-full max-w-2xl max-h-[85vh] flex flex-col">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between mb-4 gap-3">
             <div>
                 <h3 class="text-lg font-semibold text-stone-700">用户权限配置</h3>
                 <p class="text-xs text-stone-400 mt-1">单独设置指定用户是否允许查看 / 编辑他人的记录册（管理员默认拥有全局权限）</p>
             </div>
-            <button class="modal-close text-stone-400 hover:text-stone-600 text-xl leading-none" data-close="admin-modal">&times;</button>
+            <div class="flex items-center gap-2 flex-none">
+                <button id="btn-add-user"
+                        class="px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-medium shadow-card
+                               hover:bg-brand-600 active:scale-[.98] transition">
+                    + 新增用户
+                </button>
+                <button class="modal-close text-stone-400 hover:text-stone-600 text-xl leading-none" data-close="admin-modal">&times;</button>
+            </div>
         </div>
         <div class="overflow-auto -mx-2 px-2">
             <table class="w-full text-sm min-w-[38rem]">
@@ -90,6 +97,61 @@
                 <tbody id="admin-user-rows" class="divide-y divide-stone-100"></tbody>
             </table>
         </div>
+    </div>
+</div>
+
+<!-- 管理员：新增用户弹窗 -->
+<div id="user-modal" class="modal-overlay hidden">
+    <div class="modal-box w-full max-w-md">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-lg font-semibold text-stone-700">新增用户</h3>
+            <button class="modal-close text-stone-400 hover:text-stone-600 text-xl leading-none" data-close="user-modal">&times;</button>
+        </div>
+        <form id="user-form" novalidate>
+            <label class="block text-sm font-medium text-stone-600 mb-1.5">账号 <span class="text-red-400">*</span></label>
+            <input id="user-username" type="text" maxlength="64" autocomplete="off" placeholder="登录账号，2-64 个字符"
+                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300
+                          focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition">
+
+            <label class="block text-sm font-medium text-stone-600 mt-4 mb-1.5">昵称</label>
+            <input id="user-nickname" type="text" maxlength="64" autocomplete="off" placeholder="展示用昵称（选填，默认同账号）"
+                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300
+                          focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition">
+
+            <label class="block text-sm font-medium text-stone-600 mt-4 mb-1.5">初始密码 <span class="text-red-400">*</span></label>
+            <input id="user-password" type="password" maxlength="64" autocomplete="new-password" placeholder="至少 6 位，建议字母 + 数字组合"
+                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300
+                          focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition">
+
+            <label class="block text-sm font-medium text-stone-600 mt-4 mb-1.5">角色</label>
+            <select id="user-role"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white
+                           focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition">
+                <option value="USER" selected>普通用户（仅管理自己的记录册）</option>
+                <option value="ADMIN">管理员（全局权限，可管理用户）</option>
+            </select>
+
+            <div class="mt-4 p-3.5 rounded-xl border border-stone-200 bg-stone-50 space-y-2.5">
+                <label class="flex items-center justify-between gap-3 cursor-pointer">
+                    <span class="text-sm text-stone-600">允许查看他人记录册</span>
+                    <span class="switch"><input type="checkbox" id="user-can-view"><span class="slider"></span></span>
+                </label>
+                <label class="flex items-center justify-between gap-3 cursor-pointer">
+                    <span class="text-sm text-stone-600">允许编辑他人记录册</span>
+                    <span class="switch"><input type="checkbox" id="user-can-edit"><span class="slider"></span></span>
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-2.5 mt-6">
+                <button type="button" class="px-4 py-2 rounded-xl border border-stone-300 text-stone-600 hover:bg-stone-100 text-sm"
+                        data-close="user-modal">取消</button>
+                <button type="submit" id="btn-user-submit"
+                        class="px-5 py-2 rounded-xl bg-brand-500 text-white text-sm hover:bg-brand-600
+                               disabled:opacity-60 disabled:cursor-not-allowed transition">
+                    创建用户
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 

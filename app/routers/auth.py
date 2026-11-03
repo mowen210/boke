@@ -8,7 +8,7 @@ from app.config import COOKIE_NAME, TOKEN_EXPIRE_MINUTES
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import SysUser
-from app.schemas.user import LoginRequest
+from app.schemas.user import LoginRequest, PasswordChange
 from app.services import auth_service
 from app.utils.security import create_access_token
 
@@ -66,3 +66,18 @@ def me(user: SysUser = Depends(get_current_user)) -> dict:
         "can_view_others": bool(user.can_view_others),
         "can_edit_others": bool(user.can_edit_others),
     }
+
+
+@router.put("/password", summary="修改自身密码")
+def change_password(
+    body: PasswordChange,
+    db: Session = Depends(get_db),
+    user: SysUser = Depends(get_current_user),
+) -> dict:
+    """已登录用户修改自身密码：校验原密码 + 两次新密码一致。"""
+    if body.new_password != body.confirm_password:
+        raise HTTPException(status_code=400, detail="两次输入的新密码不一致")
+    if body.new_password == body.old_password:
+        raise HTTPException(status_code=400, detail="新密码不能与原密码相同")
+    auth_service.change_password(db, user, body.old_password, body.new_password)
+    return {"message": "密码修改成功", "data": {"username": user.username}}

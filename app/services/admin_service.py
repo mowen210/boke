@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.models.album import PhotoAlbum
 from app.models.user import SysRole, SysUser
-from app.schemas.user import PermissionUpdate
+from app.schemas.user import PermissionUpdate, UserCreate
+from app.utils.security import hash_password
 
 
 def _ensure_admin(user: SysUser) -> None:
@@ -71,6 +72,43 @@ def update_permissions(
     return {
         "id": user.id,
         "username": user.username,
+        "can_view_others": bool(user.can_view_others),
+        "can_edit_others": bool(user.can_edit_others),
+    }
+
+
+def create_user(db: Session, operator: SysUser, data: UserCreate) -> dict:
+    """管理员新增用户：校验账号唯一与角色编码后创建（密码 bcrypt 哈希存储）。"""
+    _ensure_admin(operator)
+    exists = (
+        db.query(SysUser)
+        .filter(SysUser.username == data.username, SysUser.is_deleted == False)  # noqa: E712
+        .first()
+    )
+    if exists is not None:
+        raise HTTPException(status_code=400, detail="账号已存在，请更换后重试")
+    role = db.query(SysRole).filter(SysRole.code == data.role_code).first()
+    if role is None:
+        raise HTTPException(status_code=400, detail="角色不存在：ADMIN / USER")
+    user = SysUser(
+        username=data.username,
+        password_hash=hash_password(data.password),
+        nickname=data.nickname or None,
+        role_id=role.id,
+        can_view_others=data.can_view_others,
+        can_edit_others=data.can_edit_others,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {
+        "id": user.id,
+        "username": user.username,
+        "nickname": user.nickname,
+        "display_name": user.display_name,
+        "role_code": role.code,
+        "role_name": role.name,
+        "is_admin": bool(role.is_admin),
         "can_view_others": bool(user.can_view_others),
         "can_edit_others": bool(user.can_edit_others),
     }

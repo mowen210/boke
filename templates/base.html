@@ -44,6 +44,10 @@
                 <span class="hidden sm:inline text-xs px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 border border-brand-200">管理员</span>
                 {% endif %}
                 <span class="text-sm text-stone-600 truncate max-w-[9rem] sm:max-w-none">{{ user.nickname }}</span>
+                <button id="btn-password"
+                        class="text-sm px-3 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:border-brand-300 hover:text-brand-600 transition">
+                    修改密码
+                </button>
                 <button id="btn-logout"
                         class="text-sm px-3 py-1.5 rounded-lg border border-stone-300 text-stone-600 hover:border-brand-300 hover:text-brand-600 transition">
                     退出
@@ -61,10 +65,49 @@
         拾光记 · 照片记录册管理系统 — 用心收藏每一段时光
     </footer>
 
+    {# 修改密码弹窗（登录后所有页面可用） #}
+    {% if user is defined and user %}
+    <div id="password-modal" class="modal-overlay hidden">
+        <div class="modal-box w-full max-w-md">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-lg font-semibold text-stone-700">修改密码</h3>
+                <button class="modal-close text-stone-400 hover:text-stone-600 text-xl leading-none" data-close="password-modal">&times;</button>
+            </div>
+            <form id="password-form" novalidate>
+                <label class="block text-sm font-medium text-stone-600 mb-1.5" for="pwd-old">原密码</label>
+                <input id="pwd-old" type="password" autocomplete="current-password" maxlength="64" placeholder="请输入当前使用的密码"
+                       class="w-full px-4 py-2.5 rounded-xl border border-stone-300
+                              focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition">
+                <label class="block text-sm font-medium text-stone-600 mt-4 mb-1.5" for="pwd-new">新密码</label>
+                <input id="pwd-new" type="password" autocomplete="new-password" maxlength="64" placeholder="至少 6 位，建议字母 + 数字组合"
+                       class="w-full px-4 py-2.5 rounded-xl border border-stone-300
+                              focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition">
+                <label class="block text-sm font-medium text-stone-600 mt-4 mb-1.5" for="pwd-confirm">确认新密码</label>
+                <input id="pwd-confirm" type="password" autocomplete="new-password" maxlength="64" placeholder="请再次输入新密码"
+                       class="w-full px-4 py-2.5 rounded-xl border border-stone-300
+                              focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition">
+                <p class="hidden mt-3 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm"
+                   id="pwd-error"></p>
+                <div class="flex justify-end gap-2.5 mt-6">
+                    <button type="button" class="px-4 py-2 rounded-xl border border-stone-300 text-stone-600 hover:bg-stone-100 text-sm"
+                            data-close="password-modal">取消</button>
+                    <button type="submit" id="btn-password-submit"
+                            class="px-5 py-2 rounded-xl bg-brand-500 text-white text-sm hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed transition">
+                        确认修改
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
     {# 全局轻提示容器 #}
     <div id="toast-box" class="fixed top-16 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center gap-2 pointer-events-none"></div>
 
     <script src="/static/js/common.js"></script>
+    {% if user is defined and user %}
+    <script src="/static/js/password.js"></script>
+    {% endif %}
     {% block scripts %}{% endblock %}
 </body>
 </html>

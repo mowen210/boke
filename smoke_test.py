@@ -57,7 +57,7 @@ r = client.get("/openapi.json")
 check("GET /openapi.json -> 200", r.status_code == 200)
 paths = r.json().get("paths", {})
 expected = [
-    "/api/auth/login", "/api/auth/logout", "/api/auth/me",
+    "/api/auth/login", "/api/auth/logout", "/api/auth/me", "/api/auth/password",
     "/api/albums", "/api/albums/{album_id}", "/api/albums/{album_id}/template",
     "/api/modules/sort", "/api/modules", "/api/modules/{module_id}",
     "/api/albums/{album_id}/photos", "/api/albums/{album_id}/photos/sort",
