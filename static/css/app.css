@@ -251,3 +251,175 @@
 
 /* 图片加载占位 */
 img[data-src], .photo-img { animation: fadeIn .3s ease-out; }
+
+/* ============================================================
+   视频播放器（全屏幻灯片）
+   双缓冲两张 .player-img 叠放，切换时分别挂 anim-<style>-in / -out
+   ============================================================ */
+.player-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 70; /* 高于普通弹窗(60) */
+    background: #17110f;
+    animation: fadeIn .25s ease-out;
+}
+.player-overlay.hidden { display: none; }
+.player-stage {
+    position: absolute; inset: 0;
+    perspective: 1800px; /* 翻书页等 3D 风格的透视 */
+    overflow: hidden;
+    cursor: pointer;
+}
+.player-img {
+    position: absolute; inset: 0;
+    margin: auto; /* 与 inset:0 配合实现居中，不占用 transform（留给动画） */
+    max-width: 94%;
+    max-height: 84%;
+    object-fit: contain;
+    border-radius: 6px;
+    box-shadow: 0 18px 60px -18px rgba(0, 0, 0, .8);
+    opacity: 0;
+}
+.player-img.show { opacity: 1; }
+.player-img.in { z-index: 2; }   /* 进场图在上层 */
+.player-img.out { z-index: 1; }  /* 出场图在下层 */
+
+/* 顶部栏：标题 + 风格/速度选择 + 关闭 */
+.player-topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: .5rem .75rem;
+    padding: .8rem 1rem;
+    background: linear-gradient(rgba(12, 9, 8, .78), transparent);
+    color: #fff;
+}
+.player-title {
+    flex: 1; min-width: 0;
+    font-size: .95rem; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.player-ctl { display: inline-flex; align-items: center; gap: .35rem; font-size: .78rem; color: rgba(255, 255, 255, .75); }
+.player-ctl select {
+    background: rgba(255, 255, 255, .12); color: #fff;
+    border: 1px solid rgba(255, 255, 255, .25);
+    border-radius: .5rem; padding: .3rem .45rem;
+    font-size: .78rem; outline: none; cursor: pointer;
+}
+.player-ctl select option { color: #333; background: #fff; }
+.player-btn {
+    width: 2.4rem; height: 2.4rem; flex: none;
+    display: inline-grid; place-items: center;
+    border-radius: 999px; border: none; cursor: pointer;
+    background: rgba(255, 255, 255, .14); color: #fff;
+    font-size: 1.15rem; line-height: 1;
+    transition: background .15s;
+}
+.player-btn:hover { background: rgba(255, 255, 255, .28); }
+
+/* 底部说明与控制条 */
+.player-caption {
+    position: absolute; left: 0; right: 0; bottom: 4.9rem; z-index: 5;
+    display: flex; flex-direction: column; align-items: center; gap: .3rem;
+    padding: 0 1.25rem; text-align: center;
+    pointer-events: none;
+}
+.player-caption p {
+    color: rgba(255, 255, 255, .9); font-size: .9rem;
+    max-width: 42rem; line-height: 1.5;
+    overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.player-caption span { color: rgba(255, 255, 255, .45); font-size: .75rem; }
+.player-controls {
+    position: absolute; left: 50%; bottom: 1.1rem; transform: translateX(-50%); z-index: 5;
+    display: flex; align-items: center; gap: .9rem;
+}
+.player-toggle { width: 3rem; height: 3rem; font-size: 1rem; background: rgba(236, 123, 162, .88); }
+.player-toggle:hover { background: #ec7ba2; }
+
+/* 进度条：CSS 动画驱动，暂停时随 .paused 冻结 */
+.player-progress {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+    height: 3px; background: rgba(255, 255, 255, .14);
+}
+.player-progress-bar { height: 100%; width: 0; background: #f39ab8; }
+.player-overlay.paused .player-progress-bar { animation-play-state: paused; }
+@keyframes playerProgress { from { width: 0 } to { width: 100% } }
+
+@media (max-width: 560px) {
+    .player-title { max-width: 8rem; }
+    .player-ctl span { display: none; }
+}
+
+/* ---------- 播放风格动画（in = 进场，out = 出场；时长 ≤ 2s 最快档间隔） ---------- */
+
+/* 1. 淡入淡出 */
+.anim-fade-in { animation: pFadeIn 1.4s ease-out forwards; }
+.anim-fade-out { animation: pFadeOut 1.4s ease-out forwards; }
+@keyframes pFadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pFadeOut { from { opacity: 1 } to { opacity: 0 } }
+
+/* 2. 树叶飘落：照片如落叶打着旋从画面右上方飘入 */
+.anim-leaf-in { animation: pLeafIn 1.6s cubic-bezier(.35, .1, .35, 1) forwards; }
+.anim-leaf-out { animation: pLeafOut 1.6s ease-in forwards; }
+@keyframes pLeafIn {
+    0%   { opacity: 0; transform: translate(38vw, -55vh) rotate(150deg) scale(.5); }
+    18%  { opacity: 1; }
+    35%  { transform: translate(16vw, -26vh) rotate(95deg) scale(.72); }
+    60%  { transform: translate(-9vw, 6vh) rotate(45deg) scale(.92); }
+    80%  { transform: translate(3vw, -2vh) rotate(-8deg) scale(.99); }
+    100% { opacity: 1; transform: translate(0, 0) rotate(0) scale(1); }
+}
+@keyframes pLeafOut {
+    0%   { opacity: 1; transform: none; }
+    100% { opacity: 0; transform: translate(-22vw, 42vh) rotate(-160deg) scale(.45); }
+}
+
+/* 3. 翻书页：以左缘为书脊翻转，如同翻开下一页 */
+.anim-flip-in { animation: pFlipIn 1.4s ease-in-out forwards; transform-origin: left center; }
+.anim-flip-out { animation: pFlipOut 1.4s ease-in-out forwards; transform-origin: left center; }
+@keyframes pFlipIn {
+    from { opacity: .2; transform: rotateY(-100deg); }
+    to   { opacity: 1; transform: rotateY(0deg); }
+}
+@keyframes pFlipOut {
+    from { opacity: 1; transform: rotateY(0deg); }
+    to   { opacity: .1; transform: rotateY(100deg); }
+}
+
+/* 4. 缩放聚焦：Ken Burns 式由远推近 */
+.anim-zoom-in { animation: pZoomIn 1.5s ease-out forwards; }
+.anim-zoom-out { animation: pZoomOut 1.5s ease-out forwards; }
+@keyframes pZoomIn {
+    from { opacity: 0; transform: scale(1.32); }
+    55%  { opacity: 1; }
+    to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pZoomOut {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(.82); }
+}
+
+/* 5. 卷轴展开：新画面自左向右揭开，旧画面随后隐去 */
+.anim-wipe-in { animation: pWipeIn 1.4s ease-in-out forwards; }
+.anim-wipe-out { animation: pWipeOut 1.4s ease-in-out forwards; }
+@keyframes pWipeIn {
+    from { clip-path: inset(0 100% 0 0); }
+    to   { clip-path: inset(0 0 0 0); }
+}
+@keyframes pWipeOut {
+    0%, 55% { opacity: 1; }
+    100%    { opacity: 0; }
+}
+
+/* 6. 旋转飞入：旋转缩放着飞入画面 */
+.anim-rotate-in { animation: pRotateIn 1.4s cubic-bezier(.2, .7, .35, 1) forwards; }
+.anim-rotate-out { animation: pRotateOut 1.4s ease-in forwards; }
+@keyframes pRotateIn {
+    from { opacity: 0; transform: rotate(-26deg) scale(.35); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes pRotateOut {
+    from { opacity: 1; transform: none; }
+    to   { opacity: 0; transform: rotate(26deg) scale(.35); }
+}

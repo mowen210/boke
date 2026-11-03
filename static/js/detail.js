@@ -72,6 +72,8 @@
         renderModules();
         renderSections();
         applyTemplateCss();
+        // 无照片时隐藏「视频播放」入口
+        document.getElementById('btn-play').classList.toggle('hidden', !state.photos.length);
     }
 
     function renderHeader() {
@@ -692,6 +694,13 @@
         applyTemplateCss();
         var tpl = state.templates.find(function (t) { return t.id === templateId; });
         window.toast('已切换为「' + (tpl ? tpl.name : '') + '」风格', 'success');
+    });
+
+    /* ================= 视频播放（全屏幻灯片） ================= */
+
+    document.getElementById('btn-play').addEventListener('click', function () {
+        if (!state.photos.length) { window.toast('这本记录册还没有可播放的照片', 'error'); return; }
+        window.AlbumPlayer.open(state.photos, { albumId: albumId, title: state.album.name });
     });
 
     /* ================= 初始化 ================= */
