@@ -1,0 +1,65 @@
+# ============================================================
+# 照片记录册管理系统 · 一键编排（应用 + MySQL 8.0）
+# 使用：
+#   1. cp .env.example .env 并按需修改（MySQL 连接值同时供两个容器使用）
+#   2. docker compose up -d --build
+#   3. 访问 http://服务器IP:8000/login
+#
+# 说明：
+#   - ${VAR:-默认值} 会自动读取同目录 .env；容器内 MYSQL_HOST 固定为服务名 mysql
+#   - 数据库数据存于命名卷 mysql_data；上传图片存于 ./upload（bind mount）
+#   - 应用启动会自动建库建表并写入种子数据（幂等），无需手工执行 SQL
+# ============================================================
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: boke-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-photo_album}
+      MYSQL_USER: ${MYSQL_USER:-mowen}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Mowen@1998}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      # CMD-SHELL 才能在容器内展开 $$MYSQL_ROOT_PASSWORD（CMD 形式不经过 shell）
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  app:
+    build: .
+    container_name: boke-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy   # 等数据库就绪再启动，避免首次启动连接失败
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      # 容器内通过服务名访问 MySQL（覆盖 .env 中的主机地址）
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-photo_album}
+      MYSQL_USER: ${MYSQL_USER:-mowen}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Mowen@1998}
+      SECRET_KEY: ${SECRET_KEY:-photo-album-secret-key-please-change-in-production}
+      TOKEN_EXPIRE_MINUTES: ${TOKEN_EXPIRE_MINUTES:-1440}
+      INIT_ADMIN_USERNAME: ${INIT_ADMIN_USERNAME:-admin}
+      INIT_ADMIN_PASSWORD: ${INIT_ADMIN_PASSWORD:-admin123}
+      INIT_DEMO_USERNAME: ${INIT_DEMO_USERNAME:-demo}
+      INIT_DEMO_PASSWORD: ${INIT_DEMO_PASSWORD:-123456}
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-5}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./upload:/app/upload
+
+volumes:
+  mysql_data:

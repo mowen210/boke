@@ -1,0 +1,22 @@
+# 版本库与本地环境
+.git
+.gitignore
+.idea
+.vscode
+.venv
+venv
+
+# 运行时产物（不入镜像：env 由 compose 注入，upload 由卷挂载）
+.env
+upload
+__pycache__
+*.pyc
+
+# 文档与测试脚本（镜像内不需要）
+docs
+README.md
+smoke_test.py
+template_test.py
+docker-compose.yml
+Dockerfile
+.dockerignore

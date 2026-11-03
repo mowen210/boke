@@ -32,6 +32,9 @@
 ```
 boke/
 ├── main.py                  # 应用入口（启动、静态目录挂载、路由注册）
+├── Dockerfile               # 镜像构建（python:3.11-slim + uvicorn）
+├── docker-compose.yml       # 一键编排：应用 + MySQL 8.0（健康检查/数据卷）
+├── .dockerignore            # 镜像构建排除清单
 ├── requirements.txt         # 依赖清单
 ├── .env.example             # 环境变量示例（复制为 .env 使用）
 ├── app/
@@ -58,10 +61,42 @@ boke/
 
 ### 1. 环境要求
 
-- Python 3.10+
-- MySQL 8.0（或 5.7+）
+- Docker 部署（推荐）：Docker Engine 20.10+ 与 Docker Compose v2
+- 裸机部署：Python 3.10+ 与 MySQL 8.0（或 5.7+）
 
-### 2. 初始化 MySQL
+### 2. 方式一：Docker 部署（推荐）
+
+```bash
+# ① 准备配置（SECRET_KEY 务必更换；MYSQL_USER/MYSQL_PASSWORD 同时供 MySQL 容器初始化）
+cp .env.example .env
+
+# ② 一键构建并启动（应用 + MySQL 8.0）
+docker compose up -d --build
+
+# ③ 查看运行日志
+docker compose logs -f app
+```
+
+- 访问：<http://服务器IP:8000/login>（端口用 `.env` 的 `APP_PORT` 调整）；
+- 首次启动自动建库建表并写入种子数据（幂等）：MySQL 数据持久化在命名卷 `mysql_data`，上传图片持久化在项目 `./upload` 目录；
+- 容器内 `MYSQL_HOST` 由 compose 固定为服务名 `mysql`，`.env` 中的地址仅裸机部署时生效；
+- Linux 宿主机若遇 upload 目录权限问题（容器以 uid 1000 运行）：`mkdir -p upload && sudo chown -R 1000:1000 upload`；
+- 版本更新：`git pull && docker compose up -d --build`（表结构变更由应用启动时自动补齐，无需手工迁移）；
+- 常用命令：`docker compose restart app` 重启、`docker compose down` 停止（带 `-v` 会连数据库卷一起删除，慎用）。
+
+从旧环境迁移数据：
+
+```bash
+# 旧库导出（在旧服务器执行）
+mysqldump -h 旧库地址 -u root -p photo_album > dump.sql
+# 导入 MySQL 容器（新服务器、compose 已启动后执行）
+docker exec -i boke-mysql mysql -u root -p"root密码" photo_album < dump.sql
+# 旧 upload 目录整体拷贝到新项目目录下 ./upload 即可
+```
+
+### 3. 方式二：裸机部署
+
+#### 3.1 初始化 MySQL
 
 方式一（推荐，自动建表）：
 
@@ -75,7 +110,7 @@ CREATE DATABASE photo_album DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicod
 mysql -u root -p < docs/database.sql
 ```
 
-### 3. 配置数据库连接
+#### 3.2 配置数据库连接
 
 复制 `.env.example` 为 `.env`，按实际环境修改：
 
@@ -88,7 +123,7 @@ MYSQL_DATABASE=photo_album
 SECRET_KEY=生产环境请更换为随机长字符串
 ```
 
-### 4. 安装依赖
+#### 3.3 安装依赖
 
 ```bash
 python -m venv .venv
@@ -99,7 +134,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 5. 启动
+#### 3.4 启动
 
 ```bash
 uvicorn main:app --host 0.0.0.0 --port 8000
@@ -108,7 +143,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 
 浏览器访问：<http://127.0.0.1:8000/login> （接口文档：<http://127.0.0.1:8000/docs>）
 
-### 6. 初始账号（首次启动自动创建）
+### 4. 初始账号（首次启动自动创建）
 
 | 账号 | 密码 | 角色 | 权限 |
 | ---- | ---- | ---- | ---- |
