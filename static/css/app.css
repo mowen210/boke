@@ -142,6 +142,22 @@
 .photo-card.selected .select-check { background: #ec7ba2; color: #fff; }
 .photo-card.batch-mode .photo-img { cursor: pointer; }
 .photo-card.batch-mode .photo-note { opacity: .55; }
+
+/* ---------- 视频卡片（网格内与图片混排） ---------- */
+.photo-card .video-badge {
+    position: absolute; top: 8px; right: 8px; z-index: 4;
+    padding: .14rem .5rem; border-radius: 999px;
+    background: rgba(23, 17, 15, .62); color: #fff;
+    font-size: .68rem; line-height: 1.4;
+    pointer-events: none;
+}
+.upload-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.upload-thumb .thumb-type {
+    position: absolute; left: 4px; top: 4px;
+    padding: .08rem .42rem; border-radius: .4rem;
+    background: rgba(23, 17, 15, .62); color: #fff;
+    font-size: .64rem; pointer-events: none;
+}
 .batch-btn {
     flex: none;
     border: 1px solid #e7e2dc; background: #fff; color: #78716c;

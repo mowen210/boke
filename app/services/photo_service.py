@@ -10,11 +10,11 @@ from app.models.module import AlbumModule
 from app.models.photo import Photo
 from app.models.user import SysUser
 from app.services import module_service, permission_service, setting_service
-from app.utils.file import guess_mime, save_image
+from app.utils.file import guess_mime, is_image, is_video, save_image, save_video
 
 
 def photo_dict(photo: Photo) -> dict:
-    """照片记录 → 前端 JSON 结构。"""
+    """照片记录 → 前端 JSON 结构（视频按 file_type 前缀识别）。"""
     return {
         "id": photo.id,
         "album_id": photo.album_id,
@@ -23,6 +23,7 @@ def photo_dict(photo: Photo) -> dict:
         "original_name": photo.original_name,
         "file_size": photo.file_size,
         "file_type": photo.file_type,
+        "is_video": bool(photo.file_type and photo.file_type.startswith("video/")),
         "note": photo.note,
         "sort_order": photo.sort_order,
         "create_time": photo.create_time.strftime("%Y-%m-%d %H:%M"),
@@ -81,16 +82,25 @@ async def upload_photos(
     module_id: Optional[int],
     files: Sequence[UploadFile],
 ) -> list[dict]:
-    """批量上传照片：逐一校验（仅 jpg/png/gif/webp，单文件 ≤5MB），保存后入库。"""
+    """批量上传照片/视频：按扩展名分流，图片走图片校验，视频走视频校验（上限独立），保存后入库。"""
     permission_service.assert_can_edit(db, user, album_id)
     module = _load_module_for_upload(db, album_id, module_id)
     max_size = setting_service.get_max_upload_size_mb(db) * 1024 * 1024
+    max_video_size = setting_service.get_max_video_size_mb(db) * 1024 * 1024
 
-    created: list[dict] = []
     sort_order = _next_sort_order(db, module.id)
     for file in files:
         content = await file.read()
-        path, size = save_image(file.filename or "", content, max_size)  # 校验失败抛 400
+        name = file.filename or ""
+        if is_video(name):
+            path, size = save_video(name, content, max_video_size)  # 校验失败抛 400
+        elif is_image(name):
+            path, size = save_image(name, content, max_size)  # 校验失败抛 400
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"不支持的文件格式：{name}（图片仅允许 jpg/png/gif/webp，视频仅允许 mp4/webm/mov/m4v/ogg）",
+            )
         photo = Photo(
             album_id=album_id,
             module_id=module.id,

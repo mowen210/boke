@@ -55,6 +55,7 @@ def get_album_detail(
             "modules": module_service.list_modules(db, album.id),
             "photos": photo_service.list_photos(db, album.id),
             "max_upload_size_mb": setting_service.get_max_upload_size_mb(db),
+            "max_video_size_mb": setting_service.get_max_video_size_mb(db),
         },
     }
 

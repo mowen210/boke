@@ -93,6 +93,7 @@ def album_detail(
             "is_admin": user.is_admin,
         },
         "max_upload_size_mb": setting_service.get_max_upload_size_mb(db),
+        "max_video_size_mb": setting_service.get_max_video_size_mb(db),
     }
     current_css = next(
         (t["css_class"] for t in payload["templates"] if t["id"] == album.template_id),

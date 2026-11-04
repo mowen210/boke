@@ -32,6 +32,7 @@ def _first_photo_covers(db: Session, album_ids: list[int]) -> dict[int, str]:
     """批量取各记录册「第一个模块的第一张照片」路径，作为未自定义封面时的回退。
 
     排序规则与详情页一致：模块 sort_order → 模块 id → 照片 sort_order → 照片 id。
+    视频无法作为封面展示，已跳过。
     """
     if not album_ids:
         return {}
@@ -42,6 +43,7 @@ def _first_photo_covers(db: Session, album_ids: list[int]) -> dict[int, str]:
             Photo.album_id.in_(album_ids),
             Photo.is_deleted == False,  # noqa: E712
             AlbumModule.is_deleted == False,  # noqa: E712
+            ~Photo.file_type.like("video/%"),  # 封面回退仅取图片
         )
         .order_by(
             Photo.album_id.asc(),

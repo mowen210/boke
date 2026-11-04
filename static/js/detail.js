@@ -1,7 +1,7 @@
 /* ============================================================
    detail.js — 记录册详情页交互
-   模块管理（新增/改名/删除/拖拽排序）、照片批量上传（拖拽+预览）、
-   大图灯箱、备注、移动模块、删除、模块内拖拽排序、
+   模块管理（新增/改名/删除/拖拽排序）、照片/视频批量上传（拖拽+预览）、
+   大图灯箱（图片查看 / 视频播放）、备注、移动模块、删除、模块内拖拽排序、
    记录册信息编辑、展示风格模板一键切换、
    管理员批量删除模块内照片（勾选模式）
    ============================================================ */
@@ -21,6 +21,9 @@
     var canEdit = !!state.album.can_edit;
     var isAdmin = !!state.currentUser.is_admin;
     var maxUploadMb = DATA.max_upload_size_mb || 5;
+    var maxVideoUploadMb = DATA.max_video_size_mb || 200;
+    var IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    var VIDEO_EXTS = ['mp4', 'webm', 'mov', 'm4v', 'ogg'];
     var esc = window.escapeHtml;
     var photoArea = document.getElementById('photo-area');
 
@@ -49,10 +52,9 @@
         state.album = res.data.album;
         state.modules = res.data.modules;
         state.photos = res.data.photos;
-        if (res.data.max_upload_size_mb) {
-            maxUploadMb = res.data.max_upload_size_mb;
-            renderUploadHints();
-        }
+        if (res.data.max_upload_size_mb) maxUploadMb = res.data.max_upload_size_mb;
+        if (res.data.max_video_size_mb) maxVideoUploadMb = res.data.max_video_size_mb;
+        renderUploadHints();
         renderAll();
     }
 
@@ -60,8 +62,10 @@
     function renderUploadHints() {
         var uploadHint = document.getElementById('upload-size-hint');
         var coverHint = document.getElementById('cover-size-hint');
+        var videoHint = document.getElementById('upload-video-size-hint');
         if (uploadHint) uploadHint.textContent = maxUploadMb;
         if (coverHint) coverHint.textContent = maxUploadMb;
+        if (videoHint) videoHint.textContent = maxVideoUploadMb;
     }
 
     /* ================= 渲染 ================= */
@@ -72,8 +76,9 @@
         renderModules();
         renderSections();
         applyTemplateCss();
-        // 无照片时隐藏「视频播放」入口
-        document.getElementById('btn-play').classList.toggle('hidden', !state.photos.length);
+        // 无可播放图片时隐藏「视频播放」入口（幻灯片仅播放图片，视频请在灯箱中观看）
+        var playable = state.photos.filter(function (p) { return !p.is_video; });
+        document.getElementById('btn-play').classList.toggle('hidden', !playable.length);
     }
 
     function renderHeader() {
@@ -175,6 +180,16 @@
         bindPhotoDrag();
     }
 
+    /** 卡片媒体：图片用 <img>，视频用 <video>（首帧预览 + 角标） */
+    function mediaHtml(p) {
+        if (p.is_video) {
+            return '' +
+                '<video class="photo-img" src="' + esc(p.file_path) + '" preload="metadata" muted playsinline></video>' +
+                '<span class="video-badge">&#9654; 视频</span>';
+        }
+        return '<img class="photo-img" src="' + esc(p.file_path) + '" alt="' + esc(p.original_name || '') + '" loading="lazy">';
+    }
+
     /** 单张照片卡片 */
     function photoCardHtml(p) {
         var note = p.note ? esc(p.note) : '<span class="italic text-stone-300">未添加备注</span>';
@@ -184,13 +199,13 @@
             return '' +
                 '<figure class="photo-card batch-mode' + (selected ? ' selected' : '') + '" data-photo-id="' + p.id + '">' +
                 '  <span class="select-check">&#10003;</span>' +
-                '  <img class="photo-img" src="' + esc(p.file_path) + '" alt="' + esc(p.original_name || '') + '" loading="lazy">' +
+                '  ' + mediaHtml(p) +
                 '  <figcaption class="photo-note">' + note + '</figcaption>' +
                 '</figure>';
         }
         return '' +
-            '<figure class="photo-card" draggable="true" data-photo-id="' + p.id + '" title="拖拽排序，点击图片看大图">' +
-            '  <img class="photo-img" src="' + esc(p.file_path) + '" alt="' + esc(p.original_name || '') + '" loading="lazy">' +
+            '<figure class="photo-card" draggable="true" data-photo-id="' + p.id + '" title="拖拽排序，点击查看大图 / 播放视频">' +
+            '  ' + mediaHtml(p) +
             '  <figcaption class="photo-note">' + note + '</figcaption>' +
             '  <div class="photo-actions">' +
             (canEdit
@@ -486,11 +501,13 @@
     }
 
     function addFiles(fileList) {
-        var maxSize = maxUploadMb * 1024 * 1024;
         Array.prototype.forEach.call(fileList, function (file) {
             var ext = (file.name.split('.').pop() || '').toLowerCase();
-            var invalid = !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) || file.size > maxSize;
-            pendingFiles.push({ file: file, invalid: invalid });
+            var isVideo = VIDEO_EXTS.indexOf(ext) > -1;
+            var isImage = IMAGE_EXTS.indexOf(ext) > -1;
+            var limitMb = isVideo ? maxVideoUploadMb : maxUploadMb;
+            var invalid = (!isImage && !isVideo) || file.size > limitMb * 1024 * 1024;
+            pendingFiles.push({ file: file, isVideo: isVideo, invalid: invalid });
         });
         renderUploadPreview();
     }
@@ -498,9 +515,13 @@
     function renderUploadPreview() {
         previewBox.innerHTML = pendingFiles.map(function (item, index) {
             var url = URL.createObjectURL(item.file);
+            var media = item.isVideo
+                ? '<video src="' + url + '" preload="metadata" muted></video>'
+                : '<img src="' + url + '" alt="预览">';
             return '' +
                 '<div class="upload-thumb">' +
-                '  <img src="' + url + '" alt="预览">' +
+                '  ' + media +
+                (item.isVideo ? '<div class="thumb-type">&#9654; 视频</div>' : '') +
                 (item.invalid
                     ? '<div class="thumb-invalid">格式/大小不符</div>'
                     : '') +
@@ -509,7 +530,7 @@
         }).join('');
         // 未选择文件时显示提示
         if (!pendingFiles.length) {
-            previewBox.innerHTML = '<p class="col-span-full text-center text-xs text-stone-400 py-2">尚未选择图片</p>';
+            previewBox.innerHTML = '<p class="col-span-full text-center text-xs text-stone-400 py-2">尚未选择图片或视频</p>';
         }
     }
 
@@ -537,7 +558,11 @@
 
     document.getElementById('btn-upload-submit').addEventListener('click', async function () {
         var valid = pendingFiles.filter(function (item) { return !item.invalid; });
-        if (!valid.length) { window.toast('请先选择符合要求的图片（jpg/png/gif/webp，≤' + maxUploadMb + 'MB）', 'error'); return; }
+        if (!valid.length) {
+            window.toast('请先选择符合要求的文件（图片 jpg/png/gif/webp ≤' + maxUploadMb +
+                'MB，视频 mp4/webm/mov/m4v/ogg ≤' + maxVideoUploadMb + 'MB）', 'error');
+            return;
+        }
         var form = new FormData();
         form.append('module_id', moduleSelect.value);
         valid.forEach(function (item) { form.append('files', item.file, item.file.name); });
@@ -547,7 +572,7 @@
         btn.textContent = '上传中…';
         try {
             await window.api('/api/albums/' + albumId + '/photos', { method: 'POST', body: form });
-            window.toast('成功上传 ' + valid.length + ' 张照片', 'success');
+            window.toast('成功上传 ' + valid.length + ' 个文件', 'success');
             window.closeModal('upload-modal');
             await refresh();
         } finally {
@@ -563,7 +588,13 @@
 
     function openNoteModal(photo) {
         noteTargetId = photo.id;
-        document.getElementById('note-thumb').src = photo.file_path;
+        var thumb = document.getElementById('note-thumb');
+        if (photo.is_video) {
+            thumb.classList.add('hidden'); // 视频无静态缩略图
+        } else {
+            thumb.src = photo.file_path;
+            thumb.classList.remove('hidden');
+        }
         document.getElementById('note-input').value = photo.note || '';
         window.openModal('note-modal');
     }
@@ -625,10 +656,29 @@
     function renderLightbox() {
         var photo = lightbox.list[lightbox.index];
         if (!photo) return;
-        document.getElementById('lightbox-img').src = photo.file_path;
+        var img = document.getElementById('lightbox-img');
+        var video = document.getElementById('lightbox-video');
+        if (photo.is_video) {
+            img.classList.add('hidden');
+            video.src = photo.file_path;
+            video.classList.remove('hidden');
+            video.play().catch(function () { /* 浏览器限制自动播放时由用户手动点击播放 */ });
+        } else {
+            stopLightboxVideo();
+            img.src = photo.file_path;
+            img.classList.remove('hidden');
+        }
         document.getElementById('lightbox-note').textContent = photo.note || photo.original_name || '';
         document.getElementById('lightbox-index').textContent =
             (lightbox.index + 1) + ' / ' + lightbox.list.length;
+    }
+
+    /** 暂停并复位灯箱视频（切换/关闭时调用） */
+    function stopLightboxVideo() {
+        var video = document.getElementById('lightbox-video');
+        video.pause();
+        video.currentTime = 0;
+        video.classList.add('hidden');
     }
 
     function stepLightbox(delta) {
@@ -640,6 +690,12 @@
     document.getElementById('lightbox-prev').addEventListener('click', function () { stepLightbox(-1); });
     document.getElementById('lightbox-next').addEventListener('click', function () { stepLightbox(1); });
     document.getElementById('lightbox-close').addEventListener('click', function () { window.closeModal('lightbox'); });
+
+    // 灯箱关闭（按钮 / Esc / 点击遮罩）时暂停视频播放
+    var lightboxEl = document.getElementById('lightbox');
+    new MutationObserver(function () {
+        if (lightboxEl.classList.contains('hidden')) stopLightboxVideo();
+    }).observe(lightboxEl, { attributes: true, attributeFilter: ['class'] });
 
     document.addEventListener('keydown', function (e) {
         if (document.getElementById('lightbox').classList.contains('hidden')) return;
@@ -699,8 +755,9 @@
     /* ================= 视频播放（全屏幻灯片） ================= */
 
     document.getElementById('btn-play').addEventListener('click', function () {
-        if (!state.photos.length) { window.toast('这本记录册还没有可播放的照片', 'error'); return; }
-        window.AlbumPlayer.open(state.photos, { albumId: albumId, title: state.album.name });
+        var images = state.photos.filter(function (p) { return !p.is_video; });
+        if (!images.length) { window.toast('这本记录册还没有可播放的照片', 'error'); return; }
+        window.AlbumPlayer.open(images, { albumId: albumId, title: state.album.name });
     });
 
     /* ================= 初始化 ================= */

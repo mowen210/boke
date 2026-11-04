@@ -268,14 +268,14 @@
 
 ## 4. 照片
 
-### 4.1 批量上传照片
+### 4.1 批量上传照片 / 视频
 
 `POST /api/albums/{album_id}/photos`（multipart/form-data）
 
 | 字段 | 类型 | 必填 | 说明 |
 | ---- | ---- | ---- | ---- |
 | module_id | int | 否 | 目标模块（缺省为第一个模块） |
-| files | file[] | 是 | 多文件；仅 jpg/png/gif/webp，单文件大小上限见「管理员-系统设置」 |
+| files | file[] | 是 | 多文件（图片/视频可混传）；图片仅 jpg/png/gif/webp，视频仅 mp4/webm/mov/m4v/ogg，大小上限各自独立，见「管理员-系统设置」 |
 
 成功：
 
@@ -284,14 +284,21 @@
   "message": "成功上传 2 张照片",
   "data": [
     { "id": 22, "album_id": 1, "module_id": 5, "file_path": "/upload/202611/aa11.jpg",
-      "original_name": "cat.jpg", "file_size": 204800, "file_type": "image/jpeg",
+      "original_name": "cat.jpg", "file_size": 204800, "file_type": "image/jpeg", "is_video": false,
       "note": null, "sort_order": 2, "create_time": "2026-11-01 11:40" },
-    { "id": 23, "...": "..." }
+    { "id": 23, "album_id": 1, "module_id": 5, "file_path": "/upload/202611/bb22.mp4",
+      "original_name": "trip.mp4", "file_size": 52428800, "file_type": "video/mp4", "is_video": true,
+      "note": null, "sort_order": 3, "create_time": "2026-11-01 11:41" }
   ]
 }
 ```
 
-失败（400）：`{ "detail": "文件超过 5MB 上限：big.png" }`（上限值随管理员设置变化）
+失败（400）：
+- `{ "detail": "文件超过 5MB 上限：big.png" }`（图片上限值随管理员设置变化）
+- `{ "detail": "文件超过 200MB 上限：long.mp4" }`（视频上限值随管理员设置变化）
+- `{ "detail": "不支持的视频格式：vlog.avi（仅允许 mp4/webm/mov/m4v/ogg）" }`
+
+> 视频与照片共用 photo 表，通过 `file_type` 是否以 `video/` 开头区分（响应中提供 `is_video` 字段）。
 
 ### 4.2 批量删除照片（仅管理员）
 
@@ -439,21 +446,22 @@
 成功：
 
 ```json
-{ "message": "ok", "data": { "max_upload_size": 5 } }
+{ "message": "ok", "data": { "max_upload_size": 5, "max_video_size": 200 } }
 ```
 
 `PUT /api/admin/settings`（仅管理员，保存后立即对新上传生效）
 
 ```json
-{ "max_upload_size": 10 }
+{ "max_upload_size": 10, "max_video_size": 500 }
 ```
 
 | 字段 | 类型 | 必填 | 说明 |
 | ---- | ---- | ---- | ---- |
-| max_upload_size | int | 否 | 单文件上传上限（MB），范围 1-100 |
+| max_upload_size | int | 否 | 单张图片上传上限（MB），范围 1-100 |
+| max_video_size | int | 否 | 单个视频上传上限（MB），范围 1-2048 |
 
 失败：
-- 422：`max_upload_size` 不在 1-100 范围
+- 422：`max_upload_size` 不在 1-100 范围 / `max_video_size` 不在 1-2048 范围
 - 403：`{ "detail": "仅管理员可执行该操作" }`
 
 ---

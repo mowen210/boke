@@ -19,7 +19,7 @@ from app.services import photo_service
 router = APIRouter(tags=["照片"])
 
 
-@router.post("/api/albums/{album_id}/photos", summary="批量上传照片")
+@router.post("/api/albums/{album_id}/photos", summary="批量上传照片/视频")
 async def upload_photos(
     album_id: int,
     module_id: Optional[int] = Form(None),
@@ -27,9 +27,9 @@ async def upload_photos(
     db: Session = Depends(get_db),
     user: SysUser = Depends(get_current_user),
 ) -> dict:
-    """multipart 上传：module_id 目标模块（可选，默认第一个模块）；files 多文件。
+    """multipart 上传：module_id 目标模块（可选，默认第一个模块）；files 多文件（图片/视频可混传）。
 
-    服务端校验：仅 jpg/png/gif/webp，单文件 ≤5MB。
+    服务端校验：图片仅 jpg/png/gif/webp，视频仅 mp4/webm/mov/m4v/ogg，大小上限各自独立。
     """
     photos = await photo_service.upload_photos(db, user, album_id, module_id, files)
     return {"message": f"成功上传 {len(files)} 张照片", "data": photos}

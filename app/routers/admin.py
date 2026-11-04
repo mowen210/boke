@@ -61,7 +61,7 @@ def update_settings(
     db: Session = Depends(get_db),
     user: SysUser = Depends(get_current_user),
 ) -> dict:
-    """仅管理员可访问；max_upload_size 单位为 MB（1-100），即时生效。"""
+    """仅管理员可访问；max_upload_size / max_video_size 单位为 MB，即时生效。"""
     return {
         "message": "设置已保存",
         "data": setting_service.update_settings(db, user, body),

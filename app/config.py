@@ -40,11 +40,16 @@ TOKEN_EXPIRE_MINUTES = int(os.getenv("TOKEN_EXPIRE_MINUTES", "1440"))  # 令牌�
 COOKIE_NAME = "access_token"  # 登录令牌存放的 Cookie 名称
 
 # ---------------- 上传文件配置 ----------------
-UPLOAD_DIR = BASE_DIR / "upload"          # 上传图片保存目录（项目内 upload 文件夹）
+UPLOAD_DIR = BASE_DIR / "upload"          # 上传文件保存目录（项目内 upload 文件夹）
 # 单文件大小上限（MB）：首次启动写入 sys_setting 表的初始值，之后由管理员在前端调整
 MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "5"))
 MAX_UPLOAD_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}  # 允许的图片格式
+
+# 单个视频大小上限（MB）：视频体积远大于图片，独立配置；同样由管理员在前端调整
+MAX_VIDEO_UPLOAD_SIZE_MB = int(os.getenv("MAX_VIDEO_UPLOAD_SIZE_MB", "200"))
+MAX_VIDEO_UPLOAD_SIZE = MAX_VIDEO_UPLOAD_SIZE_MB * 1024 * 1024
+ALLOWED_VIDEO_EXTENSIONS = {"mp4", "webm", "mov", "m4v", "ogg"}  # 允许的视频格式（浏览器可直接播放）
 
 # ---------------- 初始账号配置（首次启动自动创建） ----------------
 INIT_ADMIN_USERNAME = os.getenv("INIT_ADMIN_USERNAME", "admin")
